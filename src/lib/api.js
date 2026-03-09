@@ -248,42 +248,36 @@ export async function updateCandidateScores(id, scores) {
 
 export async function addCandidateInteraction(candidateId, { type, text }) {
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('users').select('organization_id').eq('id', user?.id).single()
   const { error } = await supabase.from('interactions').insert({
     entity_type: 'candidate',
     entity_id: candidateId,
     type,
     text,
     author_id: user?.id,
-    organization_id: profile?.organization_id,
   })
   if (error) throw error
 }
 
 export async function addCompanyInteraction(companyId, { type, text }) {
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('users').select('organization_id').eq('id', user?.id).single()
   const { error } = await supabase.from('interactions').insert({
     entity_type: 'company',
     entity_id: companyId,
     type,
     text,
     author_id: user?.id,
-    organization_id: profile?.organization_id,
   })
   if (error) throw error
 }
 
 export async function sendMessageToClient(companyId, text, contextLabel) {
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('users').select('organization_id').eq('id', user?.id).single()
   const { error } = await supabase.from('interactions').insert({
     entity_type: 'company',
     entity_id: companyId,
     type: 'message',
     text,
     author_id: user?.id,
-    organization_id: profile?.organization_id,
     is_from_client: false,
     context_label: contextLabel || null,
   })
