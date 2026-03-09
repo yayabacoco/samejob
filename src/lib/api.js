@@ -299,11 +299,6 @@ export async function getCompanyMessages(companyId) {
 
 export async function createCandidate(data) {
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: userData } = await supabase
-    .from('users')
-    .select('organization_id')
-    .eq('id', user.id)
-    .single()
   const { data: cand, error } = await supabase
     .from('candidates')
     .insert({
@@ -320,7 +315,6 @@ export async function createCandidate(data) {
       score_dispo: data.scores[4],
       stage: 'sourcing',
       consultant_id: user?.id,
-      organization_id: userData?.organization_id,
       availability: 'disponible',
     })
     .select()
