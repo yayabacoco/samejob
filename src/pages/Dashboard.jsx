@@ -6,7 +6,7 @@ import {
   addCandidateInteraction, addCompanyInteraction,
   createCandidate, createCompany, createMission,
   updateCandidateInfo, updateCandidateCvSummary,
-  createClientAccess, revokeClientAccess,
+  createClientAccess, revokeClientAccess, createCandidateAccess,
   assignMissionToCandidate, unassignMissionFromCandidate,
   sendMessageToClient, getCompanyMessages,
   STAGE_TO_DB, COMPANY_STATUS_TO_DB, MISSION_STATUS_TO_DB,
@@ -306,20 +306,16 @@ const CrmDetail=({company:co,S,onBack,onAddHist,onMsg,onToast})=>{
         {!hasAccess&&!portalCreds&&<div style={{display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap"}}>
           <Inp label="Email du contact client" value={portalEmail} onChange={e=>setPortalEmail(e.target.value)} placeholder="contact@entreprise.com" style={{flex:1,minWidth:220}}/>
           <Btn pr sm onClick={doCreateAccess} dis={portalCreating||!portalEmail.trim()} style={{marginBottom:1}}>
-            <Ic n="userplus" s={13} c={C.wh}/> {portalCreating?"Création...":"Créer l'accès"}
+            <Ic n="send" s={13} c={C.wh}/> {portalCreating?"Envoi...":"Inviter par email"}
           </Btn>
         </div>}
 
-        {portalCreds&&<div style={{background:C.ok+"0d",border:`1px solid ${C.ok}33`,borderRadius:10,padding:14}}>
-          <div style={{fontSize:12,fontWeight:600,color:C.ok,marginBottom:8,display:"flex",alignItems:"center",gap:6}}><Ic n="check" s={13} c={C.ok}/> Accès créé — à envoyer au client</div>
-          <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:"4px 10px",fontSize:12,marginBottom:10}}>
-            <span style={{color:C.t3}}>URL</span><span style={{color:C.t1,fontWeight:600}}>samejob-client.vercel.app</span>
-            <span style={{color:C.t3}}>Email</span><span style={{color:C.t1}}>{portalCreds.email}</span>
-            <span style={{color:C.t3}}>Mot de passe</span><span style={{color:C.t1,fontWeight:700,letterSpacing:1}}>{portalCreds.password}</span>
+        {portalCreds&&<div style={{background:C.ok+"0d",border:`1px solid ${C.ok}33`,borderRadius:10,padding:14,display:"flex",alignItems:"center",gap:10}}>
+          <Ic n="check" s={16} c={C.ok}/>
+          <div>
+            <div style={{fontSize:13,fontWeight:600,color:C.ok}}>Invitation envoyée</div>
+            <div style={{fontSize:12,color:C.t2,marginTop:2}}>Email envoyé à <strong>{portalCreds.email}</strong> — lien d'accès valable 7 jours</div>
           </div>
-          <Btn sm onClick={()=>{navigator.clipboard.writeText(`Portail Same Job\nURL : https://samejob-client.vercel.app\nEmail : ${portalCreds.email}\nMot de passe : ${portalCreds.password}`);onToast&&onToast("Copié !");}}>
-            <Ic n="copy" s={12}/> Copier les identifiants
-          </Btn>
         </div>}
 
         {hasAccess&&!portalCreds&&<div style={{display:"flex",alignItems:"center",gap:10}}>
@@ -450,6 +446,9 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
   const [aiLoading,setAiLoading]=useState(false);
   const [cvStep,setCvStep]=useState(c.aiSummary?"preview":"edit");
   const [cvPublished,setCvPublished]=useState(!!c.aiSummary);
+  const [portalEmail,setCandPortalEmail]=useState(c.email||"");
+  const [portalSending,setPortalSending]=useState(false);
+  const [portalSent,setPortalSent]=useState(!!c.candidate_portal_user_id);
   const si=STAGES.indexOf(c.stage);
   const sc=avgS(c.scores);
   const notes=(c.history||[]).filter(h=>h.type==="note");
@@ -506,6 +505,17 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
       setCvPublished(true);
       toast("CV publié sur le profil client","ok");
     }catch(e){toast("Erreur publication : "+e.message,"err");}
+  };
+
+  const sendPortalInvite=async()=>{
+    if(!portalEmail.trim())return;
+    setPortalSending(true);
+    try{
+      await createCandidateAccess(c.id,portalEmail);
+      setPortalSent(true);
+      toast("Invitation envoyée à "+portalEmail,"ok");
+    }catch(e){toast("Erreur : "+e.message,"err");}
+    setPortalSending(false);
   };
 
   const msgCtx={name:c.name,role:c.role,skills:c.skills,mission:c.missions[0]||"",company:c.company||"",score:sc};
@@ -567,6 +577,24 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
           </div>
         </div>
       </div>
+    </Bx>
+
+    {/* ── ACCÈS PORTAIL CANDIDAT ── */}
+    <Bx style={{padding:"14px 18px",marginBottom:12}}>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:portalSent?0:10}}>
+        <Ic n="key" s={14} c={C.acc3}/>
+        <span style={{fontSize:13,fontWeight:600,color:C.t1}}>Accès portail candidat</span>
+        {portalSent&&<span style={{background:C.ok+"18",color:C.ok,fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:10}}>Actif</span>}
+      </div>
+      {portalSent
+        ? <div style={{fontSize:12,color:C.t2}}>Invitation envoyée à <strong style={{color:C.t1}}>{portalEmail||c.email}</strong></div>
+        : <div style={{display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap"}}>
+            <Inp label="Email du candidat" value={portalEmail} onChange={e=>setCandPortalEmail(e.target.value)} placeholder="candidat@email.com" style={{flex:1,minWidth:200}}/>
+            <Btn pr sm onClick={sendPortalInvite} dis={portalSending||!portalEmail.trim()} style={{marginBottom:1,background:C.acc3}}>
+              <Ic n="send" s={13} c={C.wh}/> {portalSending?"Envoi...":"Inviter par email"}
+            </Btn>
+          </div>
+      }
     </Bx>
 
     <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>

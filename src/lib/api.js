@@ -354,30 +354,43 @@ export async function createCompany(data) {
 const SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY
 const SUPABASE_URL_BASE = 'https://gbgbtbzrcsqmyckrcehe.supabase.co'
 
-export async function createClientAccess(companyId, email) {
-  const password = Math.random().toString(36).slice(-8) + 'A1!'
-
-  // 1. Créer le compte auth via Admin API
-  const res = await fetch(`${SUPABASE_URL_BASE}/auth/v1/admin/users`, {
+async function inviteUser(email, redirectTo) {
+  const res = await fetch(`${SUPABASE_URL_BASE}/auth/v1/admin/invite`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${SERVICE_KEY}`,
       'apikey': SERVICE_KEY,
     },
-    body: JSON.stringify({ email, password, email_confirm: true }),
+    body: JSON.stringify({ email, redirect_to: redirectTo }),
   })
   const data = await res.json()
-  if (!res.ok) throw new Error(data.msg || data.message || 'Erreur création compte')
+  if (!res.ok) throw new Error(data.msg || data.message || 'Erreur invitation')
+  return data
+}
 
-  // 2. Lier le compte à l'entreprise
+export async function createClientAccess(companyId, email) {
+  const data = await inviteUser(email, 'https://samejob-client.vercel.app')
+
   const { error } = await supabase
     .from('companies')
     .update({ portal_user_id: data.id })
     .eq('id', companyId)
   if (error) throw error
 
-  return { email, password, userId: data.id }
+  return { email, userId: data.id }
+}
+
+export async function createCandidateAccess(candidateId, email) {
+  const data = await inviteUser(email, 'https://samejob-candidate.vercel.app')
+
+  const { error } = await supabase
+    .from('candidates')
+    .update({ candidate_portal_user_id: data.id })
+    .eq('id', candidateId)
+  if (error) throw error
+
+  return { email, userId: data.id }
 }
 
 export async function revokeClientAccess(companyId) {
