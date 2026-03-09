@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   getMyCompany, getMissionsWithProfiles,
   submitSlots, submitOffer, rejectProfile, validateProfile,
   getMessages, sendMessage, signOut,
 } from '../lib/api'
+import { supabase } from '../lib/supabase'
 
 /* ═══════════════════════════════════════════════
    SAME JOB — Client Portal V2 (Supabase)
@@ -116,14 +117,59 @@ export default function Portal({ session }) {
   const [selProf, setSelProf] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
+  const companyRef = useRef(null);
 
   const showToast = (m, cl = C.ok) => { setToast({ m, cl }); setTimeout(() => setToast(null), 3500); };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  // ── REALTIME SUBSCRIPTIONS ─────────────────
+  useEffect(() => {
+    if (!companyRef.current) return;
+    const compId = companyRef.current.id;
+
+    const channel = supabase
+      .channel('portal-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'candidate_missions' },
+        () => refreshMissions(compId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'candidates' },
+        () => refreshMissions(compId))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'missions',
+        filter: `company_id=eq.${compId}` },
+        () => refreshMissions(compId))
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'interactions',
+        filter: `company_id=eq.${compId}` },
+        (payload) => {
+          const i = payload.new;
+          if (!i.is_from_client) {
+            setMessages(prev => [...prev, {
+              id: i.id,
+              from: 'Same Job',
+              date: (i.created_at || '').slice(0, 10),
+              text: i.content || '',
+              context: i.context_label || null,
+            }]);
+            showToast('Nouveau message de votre chasseur', C.acc);
+          }
+        })
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [company]);
+
+  const refreshMissions = async (compId) => {
+    try {
+      const mis = await getMissionsWithProfiles(compId);
+      setMissions(mis);
+    } catch (e) { console.error(e); }
+  };
 
   const loadData = async () => {
     try {
       const comp = await getMyCompany(session.user.id);
+      companyRef.current = comp;
       setCompany(comp);
       const mis = await getMissionsWithProfiles(comp.id);
       setMissions(mis);
