@@ -959,8 +959,49 @@ const GenMsgModal=({open,onClose,type:tp,context:ctx})=>{
   </Modal>;
 };
 
+// ── MESSAGES HUB ─────────────────────────────
+const MessagesHub=({S,onSelectCompany})=>{
+  const companies=S.companies||[];
+  const withMsgs=companies.filter(c=>(c.history||[]).some(h=>h.type==="message"||h.isFromClient));
+  const clientMsgs=companies.reduce((acc,c)=>{const n=(c.history||[]).filter(h=>h.isFromClient).length;return acc+n;},0);
+  if(withMsgs.length===0)return(
+    <Bx style={{padding:32,textAlign:"center"}}>
+      <Ic n="msg" s={32} c={C.t3}/>
+      <div style={{color:C.t2,fontSize:14,marginTop:12,fontWeight:600}}>Aucune conversation</div>
+      <div style={{color:C.t3,fontSize:12,marginTop:4}}>Les messages envoyés depuis le portail client apparaîtront ici</div>
+    </Bx>
+  );
+  return(
+    <div>
+      {clientMsgs>0&&<div style={{background:C.acc+"12",border:`1px solid ${C.acc}33`,borderRadius:10,padding:"10px 16px",marginBottom:16,fontSize:13,color:C.acc,fontWeight:600,display:"flex",alignItems:"center",gap:8}}>
+        <Ic n="bell" s={15} c={C.acc}/>{clientMsgs} message{clientMsgs>1?"s":""} client{clientMsgs>1?"s":""} reçu{clientMsgs>1?"s":""}
+      </div>}
+      {withMsgs.map(co=>{
+        const msgs=(co.history||[]).filter(h=>h.type==="message"||h.isFromClient);
+        const last=msgs[msgs.length-1];
+        const clientCount=(co.history||[]).filter(h=>h.isFromClient).length;
+        return(
+          <Bx key={co.id} onClick={()=>onSelectCompany(co.id)} style={{padding:"14px 16px",marginBottom:8,cursor:"pointer",borderLeft:clientCount>0?`3px solid ${C.acc}`:`3px solid transparent`}} onMouseEnter={e=>e.currentTarget.style.background=C.card2} onMouseLeave={e=>e.currentTarget.style.background=C.card}>
+            <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:38,height:38,borderRadius:10,background:C.acc+"18",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:13,color:C.acc,flexShrink:0}}>{(co.name||"?").slice(0,2).toUpperCase()}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,justifyContent:"space-between"}}>
+                  <span style={{fontSize:14,fontWeight:600,color:C.t1}}>{co.name}</span>
+                  {clientCount>0&&<span style={{background:C.acc,color:C.wh,fontSize:9,fontWeight:700,borderRadius:10,padding:"2px 7px",flexShrink:0}}>{clientCount}</span>}
+                </div>
+                {last&&<div style={{fontSize:12,color:C.t2,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}><span style={{color:last.isFromClient?C.acc:C.t3,fontWeight:600}}>{last.isFromClient?"Client":"Vous"} · </span>{last.text}</div>}
+              </div>
+              <Ic n="chevR" s={14} c={C.t3}/>
+            </div>
+          </Bx>
+        );
+      })}
+    </div>
+  );
+};
+
 // ── NAV ──────────────────────────────────────
-const NAV=[{k:"myday",l:"Ma journée",i:"sun"},{k:"crm",l:"Entreprises",i:"company"},{k:"pipeline",l:"Candidats",i:"users"},{k:"missions",l:"Missions",i:"briefcase"},{k:"reporting",l:"Reporting",i:"chart"}];
+const NAV=[{k:"myday",l:"Ma journée",i:"sun"},{k:"crm",l:"Entreprises",i:"company"},{k:"pipeline",l:"Candidats",i:"users"},{k:"missions",l:"Missions",i:"briefcase"},{k:"messages",l:"Messagerie",i:"msg"},{k:"reporting",l:"Reporting",i:"chart"}];
 
 // ── LOADING SCREEN ───────────────────────────
 const LoadingScreen=()=><div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100vh",background:C.bg,gap:16}}>
@@ -1138,6 +1179,7 @@ export default function Dashboard({ session }) {
       case "crm":return <CrmList S={S} onSel={setSelComp}/>;
       case "pipeline":return <PipelineList S={S} onSel={setSelCand} onStage={(id,s)=>updateCand(id,{stage:s})}/>;
       case "missions":return <MissionsList S={S} onSel={setSelMis}/>;
+      case "messages":return <MessagesHub S={S} onSelectCompany={id=>{setSelComp(id);setPage("crm");}}/>;
       case "reporting":return <Reporting S={S}/>;
       default:return null;
     }
@@ -1165,9 +1207,13 @@ export default function Dashboard({ session }) {
         {side&&<div><div style={{fontWeight:700,fontSize:15,color:C.t1,lineHeight:1.1}}>Same Job</div><div style={{fontSize:10,color:C.t3}}>Headhunting</div></div>}
       </div>
       <nav style={{flex:1,padding:side?"0 8px":"0 6px"}}>
-        {NAV.map(n=><button key={n.k} onClick={()=>navTo(n.k)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:side?"9px 12px":"9px 0",background:page===n.k?C.acc+"18":"transparent",color:page===n.k?C.acc:C.t3,border:"none",borderRadius:9,cursor:"pointer",fontSize:13,fontWeight:page===n.k?600:400,marginBottom:3,justifyContent:side?"flex-start":"center",transition:"all .15s"}}>
-          <Ic n={n.i} s={17} c={page===n.k?C.acc:C.t3}/>{side&&n.l}
-        </button>)}
+        {NAV.map(n=>{
+          const clientMsgCount=n.k==="messages"?companies.reduce((acc,c)=>{return acc+(c.history||[]).filter(h=>h.isFromClient).length;},0):0;
+          return <button key={n.k} onClick={()=>navTo(n.k)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:side?"9px 12px":"9px 0",background:page===n.k?C.acc+"18":"transparent",color:page===n.k?C.acc:C.t3,border:"none",borderRadius:9,cursor:"pointer",fontSize:13,fontWeight:page===n.k?600:400,marginBottom:3,justifyContent:side?"flex-start":"center",transition:"all .15s"}}>
+            <Ic n={n.i} s={17} c={page===n.k?C.acc:C.t3}/>{side&&n.l}
+            {side&&clientMsgCount>0&&<span style={{marginLeft:"auto",background:C.acc,color:C.wh,fontSize:9,fontWeight:700,borderRadius:10,padding:"2px 7px"}}>{clientMsgCount}</span>}
+          </button>;
+        })}
       </nav>
       {side&&<div style={{padding:"14px 16px",borderTop:`1px solid ${C.border}`}}>
         <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>

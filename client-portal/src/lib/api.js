@@ -160,10 +160,11 @@ export async function getMessages(companyId) {
   }))
 }
 
-export async function sendMessage(companyId, text, contextLabel) {
+export async function sendMessage(companyId, organizationId, text, contextLabel) {
   const { error } = await supabase.from('interactions').insert({
     entity_type: 'company',
     entity_id: companyId,
+    organization_id: organizationId,
     type: 'message',
     text,
     is_from_client: true,

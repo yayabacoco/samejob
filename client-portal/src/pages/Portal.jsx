@@ -156,15 +156,15 @@ export default function Portal({ session }) {
         filter: `company_id=eq.${compId}` },
         () => refreshMissions(compId))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'interactions',
-        filter: `company_id=eq.${compId}` },
+        filter: `entity_id=eq.${compId}` },
         (payload) => {
           const i = payload.new;
-          if (!i.is_from_client) {
+          if (!i.is_from_client && i.type === 'message') {
             setMessages(prev => [...prev, {
               id: i.id,
               from: 'Same Job',
               date: (i.created_at || '').slice(0, 10),
-              text: i.content || '',
+              text: i.text || '',
               context: i.context_label || null,
             }]);
             showToast('Nouveau message de votre chasseur', C.acc);
@@ -238,8 +238,15 @@ export default function Portal({ session }) {
 
   const handleSend = async (text, contextLabel) => {
     if (!company || !text.trim()) return;
-    await sendMessage(company.id, text, contextLabel);
-    setMessages(prev => [...prev, { id: Date.now(), from: 'client', date: new Date().toISOString().slice(0, 10), text, context: contextLabel }]);
+    const optimistic = { id: Date.now(), from: 'client', date: new Date().toISOString().slice(0, 10), text, context: contextLabel };
+    setMessages(prev => [...prev, optimistic]);
+    try {
+      await sendMessage(company.id, company.organization_id, text, contextLabel);
+    } catch (e) {
+      console.error('sendMessage error:', e);
+      setMessages(prev => prev.filter(m => m.id !== optimistic.id));
+      showToast('Erreur envoi message', C.err);
+    }
   };
 
   if (loading) return (
