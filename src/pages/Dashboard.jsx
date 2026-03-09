@@ -415,12 +415,17 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
       const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:4096,temperature:0.3}})
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:8192,temperature:0.3}})
       });
       const data=await res.json();
+      console.log("Gemini raw response:", JSON.stringify(data));
       if(!res.ok)throw new Error(data.error?.message||"Erreur API Gemini");
-      const summary=data.candidates?.[0]?.content?.parts?.[0]?.text||"";
-      if(!summary)throw new Error("Réponse vide de Gemini");
+      const candidate0=data.candidates?.[0];
+      const finishReason=candidate0?.finishReason;
+      console.log("finishReason:", finishReason);
+      const summary=candidate0?.content?.parts?.[0]?.text||"";
+      if(!summary)throw new Error(`Réponse vide (finishReason: ${finishReason||"inconnu"})`);
+      if(finishReason==="MAX_TOKENS")toast("Résumé tronqué — CV trop long, contactez le support","warn");
       setAiSummary(summary);
       await updateCandidateCvSummary(c.id,{cvText,aiSummary:summary});
       onUpdate(c.id,{cvText,aiSummary:summary});
