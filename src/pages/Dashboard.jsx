@@ -5,7 +5,7 @@ import {
   updateCandidateStage, updateCandidateScores,
   addCandidateInteraction, addCompanyInteraction,
   createCandidate, createCompany, createMission,
-  updateCandidateInfo,
+  updateCandidateInfo, updateCandidateCvSummary,
   createClientAccess, revokeClientAccess,
   assignMissionToCandidate, unassignMissionFromCandidate,
   STAGE_TO_DB, COMPANY_STATUS_TO_DB, MISSION_STATUS_TO_DB,
@@ -365,7 +365,7 @@ const PipelineList=({S,onSel,onStage})=>{
 
 // ── CANDIDATE DETAIL ─────────────────────────
 const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
-  const [tab,setTab]=useState("Notes");
+  const [tab,setTab]=useState("Résumé IA");
   const [showAdd,setShowAdd]=useState(false);
   const [hType,setHType]=useState("call");
   const [hText,setHText]=useState("");
@@ -375,6 +375,9 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
   const [msgType,setMsgType]=useState(null);
   const [editing,setEditing]=useState(false);
   const [editForm,setEditForm]=useState({});
+  const [cvText,setCvText]=useState(c.cvText||"");
+  const [aiSummary,setAiSummary]=useState(c.aiSummary||"");
+  const [aiLoading,setAiLoading]=useState(false);
   const si=STAGES.indexOf(c.stage);
   const sc=avgS(c.scores);
   const notes=(c.history||[]).filter(h=>h.type==="note");
@@ -401,6 +404,38 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
     setTimeout(()=>setNoteSaving(false),600);
   };
   const setScore=(idx,val)=>{const ns=[...c.scores];ns[idx]=Math.min(10,Math.max(0,parseInt(val)||0));onUpdate(c.id,{scores:ns});};
+
+  const generateSummary=async()=>{
+    if(!cvText.trim()){toast("Collez d'abord le contenu du CV","err");return;}
+    const apiKey=import.meta.env.VITE_ANTHROPIC_API_KEY;
+    if(!apiKey){toast("Clé API Anthropic non configurée","err");return;}
+    setAiLoading(true);
+    try{
+      const res=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({
+          model:"claude-haiku-4-5-20251001",
+          max_tokens:600,
+          messages:[{role:"user",content:`Tu es un assistant RH expert. Génère un résumé professionnel anonymisé de ce candidat à partir de son CV. Règles : 1) Supprime tout élément identifiant (nom, prénom, email, téléphone, adresse, liens LinkedIn/GitHub). 2) Remplace le nom par "le/la candidat(e)". 3) Conserve : expériences, compétences techniques, formations, réalisations chiffrées. 4) Format : 3-4 paragraphes clairs et concis. 5) Rédige en français.\n\nCV :\n${cvText}`}]
+        })
+      });
+      const data=await res.json();
+      if(!res.ok)throw new Error(data.error?.message||"Erreur API");
+      const summary=data.content[0].text;
+      setAiSummary(summary);
+      await updateCandidateCvSummary(c.id,{cvText,aiSummary:summary});
+      onUpdate(c.id,{cvText,aiSummary:summary});
+      toast("Résumé généré et sauvegardé","ok");
+    }catch(e){toast("Erreur : "+e.message,"err");}
+    setAiLoading(false);
+  };
+
+  const saveCvOnly=async()=>{
+    await updateCandidateCvSummary(c.id,{cvText,aiSummary}).catch(console.error);
+    onUpdate(c.id,{cvText,aiSummary});
+    toast("CV sauvegardé","ok");
+  };
 
   const msgCtx={name:c.name,role:c.role,skills:c.skills,mission:c.missions[0]||"",company:c.company||"",score:sc};
   const msgOptions=[];
@@ -464,8 +499,51 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
     </Bx>
 
     <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
-      <Tabs tabs={["Notes","Historique","Documents","Matching"]} active={tab} onChange={setTab}/>
+      <Tabs tabs={["Résumé IA","Notes","Historique","Documents","Matching"]} active={tab} onChange={setTab}/>
     </div>
+
+    {tab==="Résumé IA"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
+      <Bx style={{padding:18}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,color:C.t1}}>Contenu du CV</div>
+            <div style={{fontSize:11,color:C.t3,marginTop:2}}>Collez le texte brut du CV (copier depuis le PDF ou Word)</div>
+          </div>
+          <div style={{display:"flex",gap:6}}>
+            <Btn sm onClick={saveCvOnly} dis={!cvText.trim()}><Ic n="check" s={13}/> Sauver</Btn>
+            <Btn sm pr onClick={generateSummary} dis={aiLoading||!cvText.trim()} style={{background:C.acc}}>
+              <Ic n="spark" s={13} c={C.wh}/> {aiLoading?"Génération...":"Générer résumé IA"}
+            </Btn>
+          </div>
+        </div>
+        <textarea
+          value={cvText}
+          onChange={e=>setCvText(e.target.value)}
+          placeholder={"Collez ici le texte complet du CV...\n\nExemple :\nJean Dupont\nCTO chez TechCorp (2020-2024)\n• Architecture microservices, 50 dev\n• Stack : React, Node.js, AWS\n..."}
+          style={{width:"100%",minHeight:180,background:C.card2,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",color:C.t1,fontSize:12,outline:"none",boxSizing:"border-box",resize:"vertical",fontFamily:"inherit",lineHeight:1.6}}
+        />
+      </Bx>
+      <Bx style={{padding:18}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,color:C.t1,display:"flex",alignItems:"center",gap:6}}>
+              <Ic n="spark" s={14} c={C.acc2}/> Résumé anonymisé
+            </div>
+            <div style={{fontSize:11,color:C.t3,marginTop:2}}>Généré par IA — sans données personnelles identifiantes</div>
+          </div>
+          {aiSummary&&<Btn sm onClick={()=>{navigator.clipboard.writeText(aiSummary);toast("Copié !","ok");}}><Ic n="copy" s={13}/> Copier</Btn>}
+        </div>
+        {aiLoading&&<div style={{display:"flex",alignItems:"center",gap:10,color:C.acc2,padding:"20px 0"}}>
+          <div style={{width:16,height:16,border:`2px solid ${C.acc2}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+          <span style={{fontSize:13}}>Analyse du CV en cours...</span>
+          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+        </div>}
+        {!aiLoading&&aiSummary&&<div style={{fontSize:13,color:C.t1,lineHeight:1.75,whiteSpace:"pre-wrap",background:C.card2,borderRadius:10,padding:"14px 16px",borderLeft:`3px solid ${C.acc2}`}}>{aiSummary}</div>}
+        {!aiLoading&&!aiSummary&&<div style={{textAlign:"center",color:C.t3,fontSize:12,padding:"24px 0",borderRadius:10,border:`1px dashed ${C.border}`}}>
+          <Ic n="spark" s={24} c={C.t3}/><br/>Collez le CV ci-dessus et cliquez sur "Générer résumé IA"
+        </div>}
+      </Bx>
+    </div>}
 
     {tab==="Notes"&&<Bx style={{padding:18}}>
       <div style={{marginBottom:14}}>

@@ -153,6 +153,8 @@ export async function getCandidates(currentUserId) {
           by: resolveUserName(i.consultant_id, users, currentUserId),
         })),
       docs: [],
+      cvText: c.cv_text || '',
+      aiSummary: c.ai_summary || '',
     }
   })
 }
@@ -368,6 +370,14 @@ export async function updateCandidateInfo(id, data) {
       availability: data.available ? 'disponible' : 'en_poste',
       skills: data.skills,
     })
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function updateCandidateCvSummary(id, { cvText, aiSummary }) {
+  const { error } = await supabase
+    .from('candidates')
+    .update({ cv_text: cvText, ai_summary: aiSummary })
     .eq('id', id)
   if (error) throw error
 }
