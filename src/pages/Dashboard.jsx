@@ -303,17 +303,26 @@ const PipelineList=({S,onSel,onStage})=>{
 
 // ── CANDIDATE DETAIL ─────────────────────────
 const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
-  const [tab,setTab]=useState("Historique");
+  const [tab,setTab]=useState("Notes");
   const [showAdd,setShowAdd]=useState(false);
   const [hType,setHType]=useState("call");
   const [hText,setHText]=useState("");
+  const [noteText,setNoteText]=useState("");
+  const [noteSaving,setNoteSaving]=useState(false);
   const [editScore,setEditScore]=useState(null);
   const [msgType,setMsgType]=useState(null);
   const si=STAGES.indexOf(c.stage);
   const sc=avgS(c.scores);
-  const matching=S.missions.filter(m=>m.status!=="Placé"&&m.skills?.some(s=>c.skills.includes(s))&&!c.missions.includes(m.title));
+  const notes=(c.history||[]).filter(h=>h.type==="note");
 
   const addH=()=>{if(!hText.trim())return;onAddHist(c.id,{date:today(),type:hType,text:hText});setHText("");setShowAdd(false);};
+  const saveNote=()=>{
+    if(!noteText.trim())return;
+    setNoteSaving(true);
+    onAddHist(c.id,{date:today(),type:"note",text:noteText});
+    setNoteText("");
+    setTimeout(()=>setNoteSaving(false),600);
+  };
   const setScore=(idx,val)=>{const ns=[...c.scores];ns[idx]=Math.min(10,Math.max(0,parseInt(val)||0));onUpdate(c.id,{scores:ns});};
 
   const msgCtx={name:c.name,role:c.role,skills:c.skills,mission:c.missions[0]||"",company:c.company||"",score:sc};
@@ -363,8 +372,33 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
     </Bx>
 
     <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
-      <Tabs tabs={["Historique","Documents","Matching"]} active={tab} onChange={setTab}/>
+      <Tabs tabs={["Notes","Historique","Documents","Matching"]} active={tab} onChange={setTab}/>
     </div>
+
+    {tab==="Notes"&&<Bx style={{padding:18}}>
+      <div style={{marginBottom:14}}>
+        <textarea
+          value={noteText}
+          onChange={e=>setNoteText(e.target.value)}
+          placeholder="Écrivez une note sur ce candidat..."
+          onKeyDown={e=>{if((e.metaKey||e.ctrlKey)&&e.key==="Enter")saveNote();}}
+          style={{width:"100%",minHeight:100,background:C.card2,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",color:C.t1,fontSize:13,outline:"none",boxSizing:"border-box",resize:"vertical",fontFamily:"inherit",lineHeight:1.6}}
+        />
+        <div style={{display:"flex",justifyContent:"flex-end",marginTop:8}}>
+          <Btn pr onClick={saveNote} dis={!noteText.trim()||noteSaving}>
+            <Ic n="check" s={13} c={C.wh}/> {noteSaving?"Enregistré !":"Enregistrer"}
+          </Btn>
+        </div>
+      </div>
+      {notes.length>0&&<>
+        <div style={{fontSize:11,color:C.t3,textTransform:"uppercase",letterSpacing:.6,marginBottom:10}}>Notes précédentes</div>
+        {notes.map((h,i)=><div key={i} style={{background:C.card2,borderRadius:10,padding:"12px 14px",marginBottom:8,borderLeft:`3px solid ${C.acc}`}}>
+          <div style={{fontSize:13,color:C.t1,lineHeight:1.6,whiteSpace:"pre-wrap"}}>{h.text}</div>
+          <div style={{fontSize:10,color:C.t3,marginTop:6}}>{h.date} · {h.by}</div>
+        </div>)}
+      </>}
+      {notes.length===0&&<div style={{textAlign:"center",color:C.t3,fontSize:12,padding:"12px 0"}}>Aucune note pour ce candidat</div>}
+    </Bx>}
 
     {tab==="Historique"&&<Bx style={{padding:18}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
