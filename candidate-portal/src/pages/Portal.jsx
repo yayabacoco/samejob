@@ -169,7 +169,11 @@ const CvUpload=({mission,candidate,onSaved})=>{
     {step==="review"&&parsed&&<div>
       <div style={{background:C.ok+"08",border:`1px solid ${C.ok}22`,borderRadius:10,padding:"10px 14px",marginBottom:16,display:"flex",alignItems:"center",gap:8}}>
         <Ic n="check" s={16} c={C.ok}/>
-        <div><div style={{fontSize:13,fontWeight:600,color:C.ok}}>CV prêt</div><div style={{fontSize:11,color:C.t2,marginTop:1}}>Vérifiez et validez pour l'envoyer à votre chasseur</div></div>
+        <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:C.ok}}>CV prêt</div><div style={{fontSize:11,color:C.t2,marginTop:1}}>Vérifiez et validez pour l'envoyer à votre chasseur</div></div>
+        <div style={{display:"flex",gap:6,flexShrink:0}}>
+          <Btn sm onClick={()=>{setStep("upload");setParsed(null);setRawText("");}}>Recommencer</Btn>
+          <Btn pr sm onClick={handleValidate} dis={saving} color={C.ok}><Ic n="check" s={14} c={C.wh}/> {saving?"Envoi...":"Valider et envoyer"}</Btn>
+        </div>
       </div>
       <div style={{background:C.wh,borderRadius:16,border:`1px solid ${C.border}`,overflow:"hidden",marginBottom:16,boxShadow:C.shadowM}}>
         <div style={{background:C.acc,padding:"18px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
