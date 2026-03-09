@@ -407,25 +407,18 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
 
   const generateSummary=async()=>{
     if(!cvText.trim()){toast("Collez d'abord le contenu du CV","err");return;}
-    const apiKey=import.meta.env.VITE_GEMINI_API_KEY||"AIzaSyAgfVInb2XlzkQZKgy18P0HfcdCpeS73OI";
-    if(!apiKey){toast("Clé API Gemini non configurée","err");return;}
     setAiLoading(true);
     try{
       const prompt=`Tu es un assistant RH expert. Reformate ce CV en version anonymisée professionnelle.\n\nRÈGLES STRICTES D'ANONYMISATION :\n- Supprime : nom, prénom, email, téléphone, adresse, liens LinkedIn/GitHub.\n- Remplace le nom de l'entreprise ACTUELLE (la plus récente) par une description générique (ex: "Scale-up SaaS B2B, 200 employés", "Cabinet de conseil international", "ETI industrielle régionale").\n- Remplace toute référence directe à la personne par "le/la candidat(e)".\n\nFORMAT DE SORTIE (respecte exactement cette structure) :\n\n## Résumé\n[4 lignes maximum décrivant le profil global, les années d'expérience, les domaines de compétence clés et la valeur ajoutée du candidat]\n\n## Expériences professionnelles\n[Pour CHAQUE expérience du CV, sans en omettre aucune, utilise ce format exact :]\n**[Intitulé du poste]** | [Description anonyme de l'entreprise] | [Dates]\n- [Action concrète réalisée]\n- [Résultat ou réalisation chiffrée si disponible]\n\n## Formation\n[Diplôme] | [Type d'école] | [Année]\n\n## Compétences\n[Liste des compétences techniques et soft skills]\n\nRédige en français.\n\nCV :\n${cvText}`;
-      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{
+      const res=await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions",{
         method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:8192,temperature:0.3}})
+        headers:{"Content-Type":"application/json","Authorization":"Bearer cccc35d995874983b73e8728ec471575.ciArEcWoCrfpeWro"},
+        body:JSON.stringify({model:"glm-5",messages:[{role:"user",content:prompt}],max_tokens:8192})
       });
       const data=await res.json();
-      console.log("Gemini raw response:", JSON.stringify(data));
-      if(!res.ok)throw new Error(data.error?.message||"Erreur API Gemini");
-      const candidate0=data.candidates?.[0];
-      const finishReason=candidate0?.finishReason;
-      console.log("finishReason:", finishReason);
-      const summary=candidate0?.content?.parts?.[0]?.text||"";
-      if(!summary)throw new Error(`Réponse vide (finishReason: ${finishReason||"inconnu"})`);
-      if(finishReason==="MAX_TOKENS")toast("Résumé tronqué — CV trop long, contactez le support","warn");
+      if(!res.ok)throw new Error(data.error?.message||"Erreur API GLM-5");
+      const summary=data.choices?.[0]?.message?.content||"";
+      if(!summary)throw new Error("Réponse vide de GLM-5");
       setAiSummary(summary);
       await updateCandidateCvSummary(c.id,{cvText,aiSummary:summary});
       onUpdate(c.id,{cvText,aiSummary:summary});
@@ -811,10 +804,9 @@ const AddMisModal=({open,onClose,onAdd,companies})=>{
   const parse=async()=>{
     if(!jt.trim())return;setParsing(true);
     try{
-      const apiKey=import.meta.env.VITE_GEMINI_API_KEY||"AIzaSyAgfVInb2XlzkQZKgy18P0HfcdCpeS73OI"||"";
       const prompt=`Analyse cette fiche de poste. Réponds UNIQUEMENT en JSON valide sans backticks: {"title":"","company":"","salary":"XXK€","fee":"18%","location":"","contract":"CDI/CDD/Freelance","experience":"","skills":[""],"description":"","requirements":[""],"remote":""}\n\nFiche:\n${jt}`;
-      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
-      const data=await res.json();const raw=(data.candidates?.[0]?.content?.parts?.[0]?.text||"");
+      const res=await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer cccc35d995874983b73e8728ec471575.ciArEcWoCrfpeWro"},body:JSON.stringify({model:"glm-5",messages:[{role:"user",content:prompt}],max_tokens:2048})});
+      const data=await res.json();const raw=(data.choices?.[0]?.message?.content||"");
       const r=JSON.parse(raw.replace(/```json|```/g,"").trim());
       setF({title:r.title||"",company:r.company||"",salary:r.salary||"",fee:r.fee||"18%",location:r.location||"",contract:r.contract||"CDI",experience:r.experience||"",skills:r.skills||[],description:r.description||"",requirements:r.requirements||[],remote:r.remote||"",deadline:new Date(Date.now()+90*864e5).toISOString().slice(0,10)});
       setStep("review");
@@ -887,10 +879,9 @@ const GenMsgModal=({open,onClose,type:tp,context:ctx})=>{
       confirm:`Rédige un email de confirmation de RDV entretien en français pour ${ctx.name}. Mission: ${ctx.mission}. Ton: cordial et factuel. Max 80 mots.`
     };
     try{
-      const apiKey=import.meta.env.VITE_GEMINI_API_KEY||"AIzaSyAgfVInb2XlzkQZKgy18P0HfcdCpeS73OI"||"";
-      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompts[tp]||prompts.approach}]}]})});
-      const data=await res.json();setMsg(data.candidates?.[0]?.content?.parts?.[0]?.text||"");
-    }catch(e){setMsg("Erreur lors de la génération. Vérifiez votre clé VITE_GEMINI_API_KEY.");}
+      const res=await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer cccc35d995874983b73e8728ec471575.ciArEcWoCrfpeWro"},body:JSON.stringify({model:"glm-5",messages:[{role:"user",content:prompts[tp]||prompts.approach}],max_tokens:2048})});
+      const data=await res.json();setMsg(data.choices?.[0]?.message?.content||"");
+    }catch(e){setMsg("Erreur lors de la génération.");}
     setLoading(false);
   };
 
