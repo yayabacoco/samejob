@@ -72,7 +72,7 @@ export async function getMissionsWithProfiles(companyId) {
           cm.candidates?.score_dispo ?? 5,
         ],
         skills: cm.candidates?.skills || [],
-        summary: cm.candidates?.ai_summary || cm.candidates?.client_summary || cm.candidates?.notes || '',
+        summary: parseSummary(cm.candidates?.ai_summary) || cm.candidates?.client_summary || cm.candidates?.notes || '',
         experience: cm.candidates?.experience || '',
         cr: cm.candidates?.interview_report || '',
         interviewDate: cm.interview_date || '',
@@ -98,6 +98,17 @@ function buildSubtitle(c) {
   const parts = []
   if (c.job_title) parts.push(c.job_title)
   return parts.join(' — ')
+}
+
+// Parse ai_summary — can be JSON {summary:"..."} or plain markdown text
+export function parseSummary(raw) {
+  if (!raw) return ''
+  try {
+    const obj = JSON.parse(raw)
+    return obj.summary || raw
+  } catch {
+    return raw
+  }
 }
 
 // ── CLIENT DECISIONS ──────────────────────────

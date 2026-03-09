@@ -22,6 +22,22 @@ const Btn=({children,pr,sm,onClick:oc,dis,outline,color:cl,style:st})=><button o
 const Card=({children,style:s,glow,...p})=><div style={{background:C.card,borderRadius:16,border:`1px solid ${glow?C.acc+"55":C.border}`,boxShadow:glow?`0 0 20px ${C.acc}15`:C.shadow,transition:"all .2s",...s}} {...p}>{children}</div>;
 const IS={width:"100%",background:C.card2,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 14px",color:C.t1,fontSize:13,outline:"none",boxSizing:"border-box",fontFamily:"inherit"};
 
+// ── MARKDOWN RENDERER ───────────────────────
+const MdCv=({text})=>{
+  if(!text)return null;
+  return <div style={{lineHeight:1.8,fontSize:14,color:C.t1}}>
+    {text.split('\n').map((line,i)=>{
+      if(line.startsWith('## '))return <div key={i} style={{fontSize:11,fontWeight:700,color:C.acc,textTransform:'uppercase',letterSpacing:1,marginTop:16,marginBottom:6,paddingBottom:3,borderBottom:`1px solid ${C.card2}`}}>{line.slice(3)}</div>;
+      if(line.startsWith('# '))return <div key={i} style={{fontSize:15,fontWeight:700,color:C.t1,marginTop:12,marginBottom:4}}>{line.slice(2)}</div>;
+      if(line.startsWith('- ')||line.startsWith('• '))return <div key={i} style={{display:'flex',gap:8,alignItems:'flex-start',marginTop:3,color:C.t2,paddingLeft:8}}><span style={{color:C.acc,flexShrink:0,marginTop:3}}>•</span><span>{line.slice(2)}</span></div>;
+      if(line.trim()==='')return <div key={i} style={{height:5}}/>;
+      const parts=line.split(/\*\*([^*]+)\*\*/g);
+      if(parts.length>1)return <div key={i} style={{marginTop:3}}>{parts.map((p,j)=>j%2===1?<strong key={j} style={{color:C.t1}}>{p}</strong>:p)}</div>;
+      return <div key={i} style={{marginTop:3,color:C.t2}}>{line}</div>;
+    })}
+  </div>;
+};
+
 const Radar=({scores:sc,size:sz=180})=>{
   const cx=sz/2,r=sz/2-26,n=5;
   const ang=i=>(Math.PI*2*i/n)-Math.PI/2;
@@ -267,8 +283,11 @@ export default function Portal({ session }) {
                 <div style={{ marginTop: 6 }}><Badge c={phaseColor[p.phase]}>{phaseLabel[p.phase]}</Badge></div>
               </div>
             </div>
-            {p.summary && <div style={{ marginBottom: 16 }}><h4 style={{ fontSize: 14, fontWeight: 600, color: C.t1, margin: "0 0 6px" }}>Résumé</h4><p style={{ color: C.t2, fontSize: 14, lineHeight: 1.8, margin: 0 }}>{p.summary}</p></div>}
-            {p.experience && <div style={{ marginBottom: 16 }}><h4 style={{ fontSize: 14, fontWeight: 600, color: C.t1, margin: "0 0 6px" }}>Parcours</h4><p style={{ color: C.t2, fontSize: 14, lineHeight: 1.8, margin: 0 }}>{p.experience}</p></div>}
+            {p.summary && <div style={{ marginBottom: 16, background: C.card2, borderRadius: 12, padding: "14px 16px" }}>
+              <h4 style={{ fontSize: 11, fontWeight: 700, color: C.acc, margin: "0 0 10px", textTransform: "uppercase", letterSpacing: 1 }}>CV Anonymisé</h4>
+              <MdCv text={p.summary}/>
+            </div>}
+            {!p.summary && p.experience && <div style={{ marginBottom: 16 }}><h4 style={{ fontSize: 14, fontWeight: 600, color: C.t1, margin: "0 0 6px" }}>Parcours</h4><p style={{ color: C.t2, fontSize: 14, lineHeight: 1.8, margin: 0 }}>{p.experience}</p></div>}
             {p.skills.length > 0 && <div style={{ marginBottom: 16 }}><h4 style={{ fontSize: 14, fontWeight: 600, color: C.t1, margin: "0 0 6px" }}>Compétences</h4><div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>{p.skills.map(s => <Badge key={s} c={m?.skills.includes(s) ? C.ok : C.acc2}>{s}{m?.skills.includes(s) ? " ✓" : ""}</Badge>)}</div></div>}
             {p.cr && <div style={{ background: C.card2, borderRadius: 12, padding: 16 }}><h4 style={{ fontSize: 13, fontWeight: 600, color: C.t1, margin: "0 0 6px", display: "flex", alignItems: "center", gap: 6 }}><Ic n="file" s={14} c={C.acc} /> Compte-rendu d'entretien</h4><p style={{ color: C.t2, fontSize: 13, lineHeight: 1.7, margin: 0 }}>{p.cr}</p>{p.interviewDate && <div style={{ fontSize: 11, color: C.t3, marginTop: 6 }}>Entretien du {p.interviewDate}</div>}</div>}
             {p.offer && <div style={{ background: C.ok + "08", border: `1px solid ${C.ok}22`, borderRadius: 12, padding: 16, marginTop: 12 }}><h4 style={{ fontSize: 13, fontWeight: 600, color: C.ok, margin: "0 0 6px" }}><Ic n="gift" s={14} c={C.ok} /> Votre proposition</h4><div style={{ fontSize: 13, color: C.t2, lineHeight: 1.6 }}>Poste : {p.offer.title}<br />Salaire : {p.offer.salaryFixed} + {p.offer.salaryVar}<br />Démarrage : {p.offer.startDate}</div></div>}
