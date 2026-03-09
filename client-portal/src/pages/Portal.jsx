@@ -133,6 +133,7 @@ export default function Portal({ session }) {
   const [selProf, setSelProf] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [unreadMsg, setUnreadMsg] = useState(0);
   const companyRef = useRef(null);
 
   const showToast = (m, cl = C.ok) => { setToast({ m, cl }); setTimeout(() => setToast(null), 3500); };
@@ -167,6 +168,7 @@ export default function Portal({ session }) {
               text: m.text || '',
               context: null,
             }]);
+            setUnreadMsg(prev => prev + 1);
             showToast('Nouveau message de votre chasseur', C.acc);
           }
         })
@@ -480,9 +482,10 @@ export default function Portal({ session }) {
           </div>
         </div>
         <nav style={{ flex: 1, padding: "12px 8px" }}>
-          {[{ k: "dashboard", l: "Tableau de bord", i: "briefcase" }, { k: "messages", l: "Messages", i: "msg" }].map(n => <button key={n.k} onClick={() => { setPage(n.k); setSelMis(null); setSelProf(null); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 14px", background: page === n.k && !selMis && !selProf ? C.acc + "10" : "transparent", color: page === n.k && !selMis && !selProf ? C.acc : C.t2, border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: page === n.k ? 600 : 400, marginBottom: 3 }}>
+          {[{ k: "dashboard", l: "Tableau de bord", i: "briefcase" }, { k: "messages", l: "Messages", i: "msg" }].map(n => <button key={n.k} onClick={() => { setPage(n.k); setSelMis(null); setSelProf(null); if (n.k === "messages") setUnreadMsg(0); }} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "9px 14px", background: page === n.k && !selMis && !selProf ? C.acc + "10" : "transparent", color: page === n.k && !selMis && !selProf ? C.acc : C.t2, border: "none", borderRadius: 10, cursor: "pointer", fontSize: 13, fontWeight: page === n.k ? 600 : 400, marginBottom: 3 }}>
             <Ic n={n.i} s={16} c={page === n.k && !selMis && !selProf ? C.acc : C.t3} />{n.l}
             {n.k === "dashboard" && newCount > 0 && <span style={{ marginLeft: "auto", background: C.hot, color: C.wh, fontSize: 9, fontWeight: 700, borderRadius: 10, padding: "2px 7px" }}>{newCount}</span>}
+            {n.k === "messages" && unreadMsg > 0 && <span style={{ marginLeft: "auto", background: C.err, color: C.wh, fontSize: 9, fontWeight: 700, borderRadius: 10, padding: "2px 7px" }}>{unreadMsg}</span>}
           </button>)}
           <div style={{ padding: "12px 14px 6px", fontSize: 10, color: C.t3, textTransform: "uppercase", letterSpacing: .5, marginTop: 8 }}>Missions</div>
           {missions.map(m => { const np = m.profiles.filter(p => p.isNew).length; return <button key={m.id} onClick={() => { setSelMis(m.id); setSelProf(null); }} style={{ display: "flex", alignItems: "center", gap: 7, width: "100%", padding: "7px 14px", background: selMis === m.id ? C.acc + "10" : "transparent", color: selMis === m.id ? C.acc : C.t2, border: "none", borderRadius: 10, cursor: "pointer", fontSize: 12, fontWeight: selMis === m.id ? 600 : 400, marginBottom: 2 }}>
