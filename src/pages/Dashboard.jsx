@@ -407,7 +407,7 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
 
   const generateSummary=async()=>{
     if(!cvText.trim()){toast("Collez d'abord le contenu du CV","err");return;}
-    const apiKey=import.meta.env.VITE_GEMINI_API_KEY||"AIzaSyDyRHaylOhaLReYcvrVKM9vlW03V0miG5Y";
+    const apiKey=import.meta.env.VITE_GEMINI_API_KEY||"AIzaSyAgfVInb2XlzkQZKgy18P0HfcdCpeS73OI";
     if(!apiKey){toast("Clé API Gemini non configurée","err");return;}
     setAiLoading(true);
     try{
@@ -811,7 +811,7 @@ const AddMisModal=({open,onClose,onAdd,companies})=>{
   const parse=async()=>{
     if(!jt.trim())return;setParsing(true);
     try{
-      const apiKey=import.meta.env.VITE_GEMINI_API_KEY||"AIzaSyDyRHaylOhaLReYcvrVKM9vlW03V0miG5Y"||"";
+      const apiKey=import.meta.env.VITE_GEMINI_API_KEY||"AIzaSyAgfVInb2XlzkQZKgy18P0HfcdCpeS73OI"||"";
       const prompt=`Analyse cette fiche de poste. Réponds UNIQUEMENT en JSON valide sans backticks: {"title":"","company":"","salary":"XXK€","fee":"18%","location":"","contract":"CDI/CDD/Freelance","experience":"","skills":[""],"description":"","requirements":[""],"remote":""}\n\nFiche:\n${jt}`;
       const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
       const data=await res.json();const raw=(data.candidates?.[0]?.content?.parts?.[0]?.text||"");
@@ -887,7 +887,7 @@ const GenMsgModal=({open,onClose,type:tp,context:ctx})=>{
       confirm:`Rédige un email de confirmation de RDV entretien en français pour ${ctx.name}. Mission: ${ctx.mission}. Ton: cordial et factuel. Max 80 mots.`
     };
     try{
-      const apiKey=import.meta.env.VITE_GEMINI_API_KEY||"AIzaSyDyRHaylOhaLReYcvrVKM9vlW03V0miG5Y"||"";
+      const apiKey=import.meta.env.VITE_GEMINI_API_KEY||"AIzaSyAgfVInb2XlzkQZKgy18P0HfcdCpeS73OI"||"";
       const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompts[tp]||prompts.approach}]}]})});
       const data=await res.json();setMsg(data.candidates?.[0]?.content?.parts?.[0]?.text||"");
     }catch(e){setMsg("Erreur lors de la génération. Vérifiez votre clé VITE_GEMINI_API_KEY.");}
