@@ -407,22 +407,20 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
 
   const generateSummary=async()=>{
     if(!cvText.trim()){toast("Collez d'abord le contenu du CV","err");return;}
-    const apiKey=import.meta.env.VITE_ANTHROPIC_API_KEY;
-    if(!apiKey){toast("Clé API Anthropic non configurée","err");return;}
+    const apiKey=import.meta.env.VITE_GEMINI_API_KEY||"AIzaSyDyRHaylOhaLReYcvrVKM9vlW03V0miG5Y";
+    if(!apiKey){toast("Clé API Gemini non configurée","err");return;}
     setAiLoading(true);
     try{
-      const res=await fetch("https://api.anthropic.com/v1/messages",{
+      const prompt=`Tu es un assistant RH expert. Génère un résumé professionnel anonymisé de ce candidat à partir de son CV.\nRÈGLES STRICTES :\n1) Supprime : nom, prénom, email, téléphone, adresse, liens LinkedIn/GitHub.\n2) Supprime le nom de l'entreprise actuelle — remplace par une description générique (ex: "Scale-up SaaS B2B, 200 employés").\n3) Remplace toute référence à la personne par "le/la candidat(e)".\n4) Conserve : intitulés de poste, durées, compétences techniques, formations, réalisations chiffrées.\n5) Format : 3-4 paragraphes clairs et concis.\n6) Rédige en français.\n\nCV :\n${cvText}`;
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{
         method:"POST",
-        headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({
-          model:"claude-haiku-4-5-20251001",
-          max_tokens:600,
-          messages:[{role:"user",content:`Tu es un assistant RH expert. Génère un résumé professionnel anonymisé de ce candidat à partir de son CV. Règles : 1) Supprime tout élément identifiant (nom, prénom, email, téléphone, adresse, liens LinkedIn/GitHub). 2) Remplace le nom par "le/la candidat(e)". 3) Conserve : expériences, compétences techniques, formations, réalisations chiffrées. 4) Format : 3-4 paragraphes clairs et concis. 5) Rédige en français.\n\nCV :\n${cvText}`}]
-        })
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
       });
       const data=await res.json();
-      if(!res.ok)throw new Error(data.error?.message||"Erreur API");
-      const summary=data.content[0].text;
+      if(!res.ok)throw new Error(data.error?.message||"Erreur API Gemini");
+      const summary=data.candidates?.[0]?.content?.parts?.[0]?.text||"";
+      if(!summary)throw new Error("Réponse vide de Gemini");
       setAiSummary(summary);
       await updateCandidateCvSummary(c.id,{cvText,aiSummary:summary});
       onUpdate(c.id,{cvText,aiSummary:summary});
@@ -805,18 +803,13 @@ const AddMisModal=({open,onClose,onAdd,companies})=>{
   const [f,setF]=useState({title:"",company:"",salary:"",fee:"18%",location:"",contract:"CDI",experience:"",skills:[],description:"",requirements:[],remote:"",deadline:""});
   const reset=()=>{setStep("choose");setJt("");setF({title:"",company:"",salary:"",fee:"18%",location:"",contract:"CDI",experience:"",skills:[],description:"",requirements:[],remote:"",deadline:""});};
 
-  const ANTHROPIC_HEADERS={
-    "Content-Type":"application/json",
-    "x-api-key":import.meta.env.VITE_ANTHROPIC_API_KEY||"",
-    "anthropic-version":"2023-06-01",
-    "anthropic-dangerous-direct-browser-access":"true"
-  };
-
   const parse=async()=>{
     if(!jt.trim())return;setParsing(true);
     try{
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:ANTHROPIC_HEADERS,body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:`Analyse cette fiche de poste. Réponds UNIQUEMENT en JSON valide sans backticks: {"title":"","company":"","salary":"XXK€","fee":"18%","location":"","contract":"CDI/CDD/Freelance","experience":"","skills":[""],"description":"","requirements":[""],"remote":""}\n\nFiche:\n${jt}`}]})});
-      const data=await res.json();const raw=data.content.map(i=>i.text||"").join("");
+      const apiKey=import.meta.env.VITE_GEMINI_API_KEY||"AIzaSyDyRHaylOhaLReYcvrVKM9vlW03V0miG5Y"||"";
+      const prompt=`Analyse cette fiche de poste. Réponds UNIQUEMENT en JSON valide sans backticks: {"title":"","company":"","salary":"XXK€","fee":"18%","location":"","contract":"CDI/CDD/Freelance","experience":"","skills":[""],"description":"","requirements":[""],"remote":""}\n\nFiche:\n${jt}`;
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+      const data=await res.json();const raw=(data.candidates?.[0]?.content?.parts?.[0]?.text||"");
       const r=JSON.parse(raw.replace(/```json|```/g,"").trim());
       setF({title:r.title||"",company:r.company||"",salary:r.salary||"",fee:r.fee||"18%",location:r.location||"",contract:r.contract||"CDI",experience:r.experience||"",skills:r.skills||[],description:r.description||"",requirements:r.requirements||[],remote:r.remote||"",deadline:new Date(Date.now()+90*864e5).toISOString().slice(0,10)});
       setStep("review");
@@ -879,13 +872,6 @@ const GenMsgModal=({open,onClose,type:tp,context:ctx})=>{
   const [loading,setLoading]=useState(false);
   const [copied,setCopied]=useState(false);
 
-  const ANTHROPIC_HEADERS={
-    "Content-Type":"application/json",
-    "x-api-key":import.meta.env.VITE_ANTHROPIC_API_KEY||"",
-    "anthropic-version":"2023-06-01",
-    "anthropic-dangerous-direct-browser-access":"true"
-  };
-
   const generate=async()=>{
     setLoading(true);setMsg("");
     const prompts={
@@ -896,9 +882,10 @@ const GenMsgModal=({open,onClose,type:tp,context:ctx})=>{
       confirm:`Rédige un email de confirmation de RDV entretien en français pour ${ctx.name}. Mission: ${ctx.mission}. Ton: cordial et factuel. Max 80 mots.`
     };
     try{
-      const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:ANTHROPIC_HEADERS,body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,messages:[{role:"user",content:prompts[tp]||prompts.approach}]})});
-      const data=await res.json();setMsg(data.content.map(i=>i.text||"").join(""));
-    }catch(e){setMsg("Erreur lors de la génération. Vérifiez votre clé VITE_ANTHROPIC_API_KEY.");}
+      const apiKey=import.meta.env.VITE_GEMINI_API_KEY||"AIzaSyDyRHaylOhaLReYcvrVKM9vlW03V0miG5Y"||"";
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompts[tp]||prompts.approach}]}]})});
+      const data=await res.json();setMsg(data.candidates?.[0]?.content?.parts?.[0]?.text||"");
+    }catch(e){setMsg("Erreur lors de la génération. Vérifiez votre clé VITE_GEMINI_API_KEY.");}
     setLoading(false);
   };
 

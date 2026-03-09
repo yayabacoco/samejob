@@ -24,11 +24,12 @@ const dAgo=d=>Math.floor((Date.now()-new Date(d).getTime())/864e5);
 // ── CV PARSER (AI) ───────────────────────────
 const parseCv=async(text,mission)=>{
   try{
-    const apiKey=import.meta.env.VITE_ANTHROPIC_API_KEY;
+    const apiKey=import.meta.env.VITE_GEMINI_API_KEY||"AIzaSyDyRHaylOhaLReYcvrVKM9vlW03V0miG5Y";
     if(!apiKey)return null;
-    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1500,messages:[{role:"user",content:`Tu es un expert en recrutement. Analyse ce CV et génère une version anonymisée et reformatée adaptée au poste de "${mission}". Met en avant les compétences et expériences pertinentes.\n\nRÈGLES : Remplace le nom par "Candidat", supprime email/téléphone/adresse, remplace noms d'entreprises par descriptions génériques ("Scale-up SaaS B2B, 200 employés"), garde intitulés de poste, durées, réalisations.\n\nRéponds UNIQUEMENT en JSON valide :\n{"summary":"résumé 3 lignes","experience":[{"title":"intitulé","company":"description anonyme","duration":"durée","highlights":["réalisation 1","réalisation 2"]}],"skills":["compétence1"],"education":[{"degree":"diplôme","school":"type d'école","year":"année"}],"languages":["Français natif"]}\n\nCV :\n${text}`}]})});
+    const prompt=`Tu es un expert en recrutement. Analyse ce CV et génère une version anonymisée et reformatée adaptée au poste de "${mission}".\n\nRÈGLES STRICTES :\n- Supprime : nom, prénom, email, téléphone, adresse, liens LinkedIn/GitHub.\n- Supprime le nom de TOUTES les entreprises (y compris l'actuelle) — remplace par des descriptions génériques (ex: "Scale-up SaaS B2B, 200 employés", "Grand groupe industriel coté").\n- Garde : intitulés de poste, durées, réalisations chiffrées, compétences.\n\nRéponds UNIQUEMENT en JSON valide sans backticks :\n{"summary":"résumé 3 lignes","experience":[{"title":"intitulé","company":"description anonyme","duration":"durée","highlights":["réalisation 1","réalisation 2"]}],"skills":["compétence1"],"education":[{"degree":"diplôme","school":"type d'école","year":"année"}],"languages":["Français natif"]}\n\nCV :\n${text}`;
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
     const data=await res.json();
-    const raw=data.content.map(i=>i.text||"").join("");
+    const raw=(data.candidates?.[0]?.content?.parts?.[0]?.text||"");
     return JSON.parse(raw.replace(/```json|```/g,"").trim());
   }catch(e){return null;}
 };
