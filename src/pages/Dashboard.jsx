@@ -58,7 +58,7 @@ const DIMS=["Technique","Soft Skills","Motivation","Fit culturel","Disponibilit�
 const TEAM=[{id:1,n:"Vous",i:"SJ",c:C.acc},{id:2,n:"Alice Martin",i:"AM",c:C.pink},{id:3,n:"Marc Durand",i:"MD",c:C.acc3}];
 
 // ── SVG ICONS ────────────────────────────────
-const P={sun:"M12 17a5 5 0 100-10 5 5 0 000 10z M12 1v2m0 18v2m-7.78-16.36l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42",company:"M3 21h18M3 7v14m18-14v14M9 3h6v4H9zM9 10h1v1H9zm5 0h1v1h-1zM9 14h1v1H9zm5 0h1v1h-1z",users:"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm14 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75",briefcase:"M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16",chart:"M18 20V10M12 20V4M6 20v-6",search:"M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.35-4.35",plus:"M12 5v14M5 12h14",bell:"M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0",x:"M18 6L6 18M6 6l12 12",check:"M20 6L9 17l-5-5",phone:"M22 16.92v3a2 2 0 01-2.18 2 19.8 19.8 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.8 19.8 0 012.12 4.11 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z",mail:"M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zM22 6l-10 7L2 6",file:"M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8m8 4H8m2-8H8",edit:"M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z",alert:"M12 22a10 10 0 100-20 10 10 0 000 20zM12 8v4m0 4h.01",zap:"M13 2L3 14h9l-1 8 10-12h-9z",star:"M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z",target:"M12 22a10 10 0 100-20 10 10 0 000 20zM12 18a6 6 0 100-12 6 6 0 000 12z",clock:"M12 22a10 10 0 100-20 10 10 0 000 20zM12 6v6l4 2",chevR:"M9 18l6-6-6-6",chevD:"M6 9l6 6 6-6",mappin:"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z",userplus:"M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M8.5 11a4 4 0 100-8 4 4 0 000 8zM20 8v6M23 11h-6",copy:"M20 9h-9a2 2 0 00-2 2v9a2 2 0 002 2h9a2 2 0 002-2v-9a2 2 0 00-2-2zM5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1",spark:"M13 2L3 14h9l-1 8 10-12h-9z",shield:"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",msg:"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z",key:"M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.78 7.78 5.5 5.5 0 017.78-7.78z",upload:"M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12",download:"M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3",link:"M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71",logout:"M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"};
+const P={sun:"M12 17a5 5 0 100-10 5 5 0 000 10z M12 1v2m0 18v2m-7.78-16.36l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42",company:"M3 21h18M3 7v14m18-14v14M9 3h6v4H9zM9 10h1v1H9zm5 0h1v1h-1zM9 14h1v1H9zm5 0h1v1h-1z",users:"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm14 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75",briefcase:"M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16",chart:"M18 20V10M12 20V4M6 20v-6",search:"M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.35-4.35",plus:"M12 5v14M5 12h14",bell:"M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0",x:"M18 6L6 18M6 6l12 12",check:"M20 6L9 17l-5-5",phone:"M22 16.92v3a2 2 0 01-2.18 2 19.8 19.8 0 01-8.63-3.07 19.5 19.5 0 01-6-6A19.8 19.8 0 012.12 4.11 2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0122 16.92z",mail:"M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zM22 6l-10 7L2 6",file:"M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8m8 4H8m2-8H8",edit:"M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z",alert:"M12 22a10 10 0 100-20 10 10 0 000 20zM12 8v4m0 4h.01",zap:"M13 2L3 14h9l-1 8 10-12h-9z",star:"M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z",target:"M12 22a10 10 0 100-20 10 10 0 000 20zM12 18a6 6 0 100-12 6 6 0 000 12z",clock:"M12 22a10 10 0 100-20 10 10 0 000 20zM12 6v6l4 2",chevR:"M9 18l6-6-6-6",chevD:"M6 9l6 6 6-6",mappin:"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z",userplus:"M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M8.5 11a4 4 0 100-8 4 4 0 000 8zM20 8v6M23 11h-6",copy:"M20 9h-9a2 2 0 00-2 2v9a2 2 0 002 2h9a2 2 0 002-2v-9a2 2 0 00-2-2zM5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1",spark:"M13 2L3 14h9l-1 8 10-12h-9z",shield:"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",msg:"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z",key:"M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.78 7.78 5.5 5.5 0 017.78-7.78z",upload:"M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12",download:"M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3",send:"M22 2L11 13M22 2l-7 20-4-9-9-4z",link:"M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71",logout:"M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"};
 const Ic=({n,s=18,c:cl})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl||"currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{(P[n]||"").split("M").filter(Boolean).map((d,i)=><path key={i} d={"M"+d}/>)}</svg>;
 
 // ── HELPERS ──────────────────────────────────
@@ -448,6 +448,8 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
   const [cvText,setCvText]=useState(c.cvText||"");
   const [aiSummary,setAiSummary]=useState(c.aiSummary||"");
   const [aiLoading,setAiLoading]=useState(false);
+  const [cvStep,setCvStep]=useState(c.aiSummary?"preview":"edit");
+  const [cvPublished,setCvPublished]=useState(!!c.aiSummary);
   const si=STAGES.indexOf(c.stage);
   const sc=avgS(c.scores);
   const notes=(c.history||[]).filter(h=>h.type==="note");
@@ -490,17 +492,20 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
       const summary=data.result||"";
       if(!summary)throw new Error("Réponse vide");
       setAiSummary(summary);
-      await updateCandidateCvSummary(c.id,{cvText,aiSummary:summary});
-      onUpdate(c.id,{cvText,aiSummary:summary});
-      toast("Résumé généré et sauvegardé","ok");
+      setCvStep("preview");
+      setCvPublished(false);
+      toast("CV anonymisé généré — vérifiez et publiez","ok");
     }catch(e){toast("Erreur : "+e.message,"err");}
     setAiLoading(false);
   };
 
-  const saveCvOnly=async()=>{
-    await updateCandidateCvSummary(c.id,{cvText,aiSummary}).catch(console.error);
-    onUpdate(c.id,{cvText,aiSummary});
-    toast("CV sauvegardé","ok");
+  const publishToClient=async()=>{
+    try{
+      await updateCandidateCvSummary(c.id,{cvText,aiSummary});
+      onUpdate(c.id,{cvText,aiSummary});
+      setCvPublished(true);
+      toast("CV publié sur le profil client","ok");
+    }catch(e){toast("Erreur publication : "+e.message,"err");}
   };
 
   const msgCtx={name:c.name,role:c.role,skills:c.skills,mission:c.missions[0]||"",company:c.company||"",score:sc};
@@ -569,56 +574,67 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
     </div>
 
     {tab==="Résumé IA"&&<div style={{display:"flex",flexDirection:"column",gap:14}}>
-      <Bx style={{padding:18}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-          <div>
-            <div style={{fontSize:14,fontWeight:700,color:C.t1}}>Contenu du CV</div>
-            <div style={{fontSize:11,color:C.t3,marginTop:2}}>Collez le texte brut du CV (copier depuis le PDF ou Word)</div>
-          </div>
-          <div style={{display:"flex",gap:6}}>
-            <Btn sm onClick={saveCvOnly} dis={!cvText.trim()}><Ic n="check" s={13}/> Sauver</Btn>
-            <Btn sm pr onClick={generateSummary} dis={aiLoading||!cvText.trim()} style={{background:C.acc}}>
-              <Ic n="spark" s={13} c={C.wh}/> {aiLoading?"Génération...":"Générer résumé IA"}
-            </Btn>
-          </div>
+
+      {/* ── ÉTAPE 1 : saisie CV ── */}
+      {cvStep==="edit"&&<Bx style={{padding:18}}>
+        <div style={{marginBottom:12}}>
+          <div style={{fontSize:14,fontWeight:700,color:C.t1}}>CV brut du candidat</div>
+          <div style={{fontSize:11,color:C.t3,marginTop:2}}>Collez le texte complet (copié depuis PDF ou Word) — l'IA va l'anonymiser</div>
         </div>
         <textarea
           value={cvText}
           onChange={e=>setCvText(e.target.value)}
-          placeholder={"Collez ici le texte complet du CV...\n\nExemple :\nJean Dupont\nCTO chez TechCorp (2020-2024)\n• Architecture microservices, 50 dev\n• Stack : React, Node.js, AWS\n..."}
-          style={{width:"100%",minHeight:180,background:C.card2,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",color:C.t1,fontSize:12,outline:"none",boxSizing:"border-box",resize:"vertical",fontFamily:"inherit",lineHeight:1.6}}
+          placeholder={"Jean Dupont\nCTO chez TechCorp (2020-2024)\n• Architecture microservices, 50 dev\n• Stack : React, Node.js, AWS\n..."}
+          style={{width:"100%",minHeight:200,background:C.card2,border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",color:C.t1,fontSize:12,outline:"none",boxSizing:"border-box",resize:"vertical",fontFamily:"inherit",lineHeight:1.6}}
         />
-      </Bx>
-      <Bx style={{padding:18}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-          <div>
-            <div style={{fontSize:14,fontWeight:700,color:C.t1,display:"flex",alignItems:"center",gap:6}}>
-              <Ic n="spark" s={14} c={C.acc2}/> Résumé anonymisé
-            </div>
-            <div style={{fontSize:11,color:C.t3,marginTop:2}}>Généré par IA — sans données personnelles identifiantes</div>
-          </div>
-          {aiSummary&&<div style={{display:"flex",gap:6}}>
-            <Btn sm onClick={()=>{navigator.clipboard.writeText(aiSummary);toast("Copié !","ok");}}><Ic n="copy" s={13}/> Copier</Btn>
-            <Btn sm pr onClick={()=>{
-              const blob=new Blob([`# CV Anonymisé — ${c.name}\n\n${aiSummary}`],{type:"text/markdown"});
-              const url=URL.createObjectURL(blob);
-              const a=document.createElement("a");
-              a.href=url;a.download=`CV_anonymise_${c.name.replace(/\s+/g,"_")}.md`;
-              a.click();URL.revokeObjectURL(url);
-              toast("CV téléchargé","ok");
-            }} style={{background:C.ok}}><Ic n="download" s={13} c={C.wh}/> Déposer</Btn>
-          </div>}
-        </div>
-        {aiLoading&&<div style={{display:"flex",alignItems:"center",gap:10,color:C.acc2,padding:"20px 0"}}>
-          <div style={{width:16,height:16,border:`2px solid ${C.acc2}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
-          <span style={{fontSize:13}}>Analyse du CV en cours...</span>
+        {aiLoading&&<div style={{display:"flex",alignItems:"center",gap:10,color:C.acc2,marginTop:12}}>
+          <div style={{width:14,height:14,border:`2px solid ${C.acc2}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+          <span style={{fontSize:13}}>Anonymisation en cours...</span>
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </div>}
-        {!aiLoading&&aiSummary&&<div style={{background:C.card2,borderRadius:10,padding:"16px 18px",borderLeft:`3px solid ${C.acc2}`}}><MdCV text={aiSummary} colors={C}/></div>}
-        {!aiLoading&&!aiSummary&&<div style={{textAlign:"center",color:C.t3,fontSize:12,padding:"24px 0",borderRadius:10,border:`1px dashed ${C.border}`}}>
-          <Ic n="spark" s={24} c={C.t3}/><br/>Collez le CV ci-dessus et cliquez sur "Générer résumé IA"
-        </div>}
-      </Bx>
+        <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:12}}>
+          {aiSummary&&<Btn sm onClick={()=>setCvStep("preview")}><Ic n="file" s={13}/> Voir le CV anonymisé</Btn>}
+          <Btn sm pr onClick={generateSummary} dis={aiLoading||!cvText.trim()} style={{background:C.acc}}>
+            <Ic n="spark" s={13} c={C.wh}/> {aiLoading?"Analyse...":"Analyser et anonymiser avec l'IA"}
+          </Btn>
+        </div>
+      </Bx>}
+
+      {/* ── ÉTAPE 2 : preview + publication ── */}
+      {cvStep==="preview"&&aiSummary&&<div>
+        <div style={{background:cvPublished?C.ok+"10":C.acc+"0a",border:`1px solid ${cvPublished?C.ok+"44":C.acc+"33"}`,borderRadius:12,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+          <Ic n={cvPublished?"check":"spark"} s={16} c={cvPublished?C.ok:C.acc}/>
+          <div style={{flex:1}}>
+            <div style={{fontSize:13,fontWeight:700,color:cvPublished?C.ok:C.t1}}>{cvPublished?"CV publié sur le profil client":"CV anonymisé prêt à publier"}</div>
+            <div style={{fontSize:11,color:C.t3,marginTop:1}}>{cvPublished?"Visible par le client dans la fiche profil":"Vérifiez le contenu avant de le rendre visible au client"}</div>
+          </div>
+          <div style={{display:"flex",gap:6,flexShrink:0}}>
+            <Btn sm onClick={()=>setCvStep("edit")}><Ic n="edit" s={12}/> Modifier</Btn>
+            <Btn sm onClick={()=>{navigator.clipboard.writeText(aiSummary);toast("Copié !","ok");}}><Ic n="copy" s={12}/> Copier</Btn>
+            <Btn sm onClick={()=>{
+              const blob=new Blob([`# CV Anonymisé — ${c.name}\n\n${aiSummary}`],{type:"text/markdown"});
+              const url=URL.createObjectURL(blob);const a=document.createElement("a");
+              a.href=url;a.download=`CV_${c.name.replace(/\s+/g,"_")}.md`;a.click();URL.revokeObjectURL(url);
+              toast("Téléchargé","ok");
+            }}><Ic n="download" s={12}/> Télécharger</Btn>
+            <Btn sm pr onClick={publishToClient} style={{background:cvPublished?C.ok:C.acc}}>
+              <Ic n="send" s={12} c={C.wh}/> {cvPublished?"Republier":"Publier sur le profil client"}
+            </Btn>
+          </div>
+        </div>
+        <div style={{background:C.wh,borderRadius:16,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,.06)"}}>
+          <div style={{background:C.acc,padding:"14px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><div style={{fontSize:15,fontWeight:700,color:C.wh}}>Candidat — Profil confidentiel</div><div style={{fontSize:11,color:"rgba(255,255,255,.7)",marginTop:1}}>Mission : {c.missions[0]||"—"} · {c.company||"—"}</div></div>
+            {cvPublished&&<div style={{background:C.ok,color:C.wh,fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:20}}>Visible client</div>}
+          </div>
+          <div style={{padding:"20px 24px",maxHeight:500,overflow:"auto"}}><MdCV text={aiSummary} colors={C}/></div>
+          <div style={{background:C.card2,padding:"8px 20px",display:"flex",justifyContent:"space-between"}}>
+            <div style={{fontSize:10,color:C.t3}}>Document confidentiel — Same Job</div>
+            <div style={{fontSize:10,color:C.t3}}>{c.name}</div>
+          </div>
+        </div>
+      </div>}
+
     </div>}
 
     {tab==="Notes"&&<Bx style={{padding:18}}>
