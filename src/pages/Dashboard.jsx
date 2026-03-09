@@ -15,6 +15,33 @@ import {
    SAME JOB V1 — Headhunter Management Platform
    ═══════════════════════════════════════════════ */
 
+// ── MARKDOWN RENDERER ────────────────────────
+const MdCV=({text,colors})=>{
+  if(!text)return null;
+  const C2=colors||{};
+  const lines=text.split('\n');
+  const els=[];
+  let key=0;
+  for(let i=0;i<lines.length;i++){
+    const l=lines[i];
+    const trimmed=l.trim();
+    if(!trimmed){els.push(<div key={key++} style={{height:6}}/>);continue;}
+    if(trimmed.startsWith('## ')){
+      els.push(<div key={key++} style={{fontSize:13,fontWeight:700,color:C2.acc2||'#a29bfe',textTransform:'uppercase',letterSpacing:.8,marginTop:16,marginBottom:6,paddingBottom:4,borderBottom:`1px solid ${C2.border||'#282d42'}`}}>{trimmed.slice(3)}</div>);
+    } else if(trimmed.startsWith('**')&&trimmed.endsWith('**')&&trimmed.split('**').length===3){
+      els.push(<div key={key++} style={{fontSize:13,fontWeight:700,color:C2.t1||'#e2e5ef',marginTop:10,marginBottom:2}}>{trimmed.slice(2,-2)}</div>);
+    } else if(/^\*\*.*\*\*/.test(trimmed)){
+      const html=trimmed.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+      els.push(<div key={key++} style={{fontSize:13,color:C2.t1||'#e2e5ef',lineHeight:1.7,marginTop:8}} dangerouslySetInnerHTML={{__html:html}}/>);
+    } else if(trimmed.startsWith('- ')||trimmed.startsWith('• ')||trimmed.startsWith('* ')){
+      els.push(<div key={key++} style={{display:'flex',gap:8,fontSize:12.5,color:C2.t2||'#8890a6',lineHeight:1.6,marginLeft:8,marginTop:2}}><span style={{color:C2.acc3||'#00cec9',flexShrink:0,marginTop:2}}>›</span><span>{trimmed.slice(2)}</span></div>);
+    } else {
+      els.push(<div key={key++} style={{fontSize:13,color:C2.t2||'#8890a6',lineHeight:1.7,marginTop:2}}>{trimmed}</div>);
+    }
+  }
+  return <div>{els}</div>;
+};
+
 // ── THEME ────────────────────────────────────
 const C = {
   bg:"#0b0d14",bg2:"#12141e",card:"#181b27",card2:"#1f2333",
@@ -409,7 +436,7 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
     if(!cvText.trim()){toast("Collez d'abord le contenu du CV","err");return;}
     setAiLoading(true);
     try{
-      const prompt=`Tu es un assistant RH expert. Reformate ce CV en version anonymisée professionnelle.\n\nRÈGLES STRICTES D'ANONYMISATION :\n- Supprime : nom, prénom, email, téléphone, adresse, liens LinkedIn/GitHub.\n- Remplace le nom de l'entreprise ACTUELLE (la plus récente) par une description générique (ex: "Scale-up SaaS B2B, 200 employés", "Cabinet de conseil international", "ETI industrielle régionale").\n- Remplace toute référence directe à la personne par "le/la candidat(e)".\n\nFORMAT DE SORTIE (respecte exactement cette structure) :\n\n## Résumé\n[4 lignes maximum décrivant le profil global, les années d'expérience, les domaines de compétence clés et la valeur ajoutée du candidat]\n\n## Expériences professionnelles\n[Pour CHAQUE expérience du CV, sans en omettre aucune, utilise ce format exact :]\n**[Intitulé du poste]** | [Description anonyme de l'entreprise] | [Dates]\n- [Action concrète réalisée]\n- [Résultat ou réalisation chiffrée si disponible]\n\n## Formation\n[Diplôme] | [Type d'école] | [Année]\n\n## Compétences\n[Liste des compétences techniques et soft skills]\n\nRédige en français.\n\nCV :\n${cvText}`;
+      const prompt=`Tu es un assistant RH expert. À partir du CV brut ci-dessous, produis un document structuré en français.\n\nRÈGLES STRICTES :\n1. Supprime TOUTE donnée personnelle identifiante : nom, prénom, email, téléphone, adresse postale, liens LinkedIn/GitHub/réseaux.\n2. Remplace le nom de l'entreprise ACTUELLE (la plus récente dans le CV) par une description générique du type "Société de gestion indépendante, filiale d'un grand groupe public", "Scale-up SaaS B2B, 200 employés", etc.\n3. Remplace chaque mention directe de la personne par "le/la candidat(e)".\n4. CONSERVE absolument TOUTES les expériences professionnelles sans en omettre aucune.\n\nFORMAT DE SORTIE — respecte EXACTEMENT cette structure markdown :\n\n## Résumé\n[Exactement 5 lignes décrivant : années d'expérience totales, secteurs d'activité, expertises clés, type de postes occupés, valeur ajoutée principale]\n\n## Expériences professionnelles\n[Pour chaque expérience, ce format exact — une par une, dans l'ordre chronologique inverse :]\n**[Intitulé du poste]** | [Description anonyme de l'entreprise] | [Dates]\n- [Responsabilité ou mission principale]\n- [Réalisation concrète ou résultat chiffré]\n\n## Formation\n[Pour chaque diplôme :]\n**[Intitulé du diplôme]** | [Nom ou type de l'établissement] | [Année]\n\n## Compétences\n- [Compétence technique ou outil]\n\n## Langues\n- [Langue — niveau]\n\nCV brut :\n${cvText}`;
       const res=await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions",{
         method:"POST",
         headers:{"Content-Type":"application/json","Authorization":"Bearer cccc35d995874983b73e8728ec471575.ciArEcWoCrfpeWro"},
@@ -534,7 +561,7 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
           <span style={{fontSize:13}}>Analyse du CV en cours...</span>
           <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
         </div>}
-        {!aiLoading&&aiSummary&&<div style={{fontSize:13,color:C.t1,lineHeight:1.75,whiteSpace:"pre-wrap",background:C.card2,borderRadius:10,padding:"14px 16px",borderLeft:`3px solid ${C.acc2}`}}>{aiSummary}</div>}
+        {!aiLoading&&aiSummary&&<div style={{background:C.card2,borderRadius:10,padding:"16px 18px",borderLeft:`3px solid ${C.acc2}`}}><MdCV text={aiSummary} colors={C}/></div>}
         {!aiLoading&&!aiSummary&&<div style={{textAlign:"center",color:C.t3,fontSize:12,padding:"24px 0",borderRadius:10,border:`1px dashed ${C.border}`}}>
           <Ic n="spark" s={24} c={C.t3}/><br/>Collez le CV ci-dessus et cliquez sur "Générer résumé IA"
         </div>}
