@@ -437,15 +437,15 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
     setAiLoading(true);
     try{
       const prompt=`Tu es un assistant RH expert. À partir du CV brut ci-dessous, produis un document structuré en français.\n\nRÈGLES STRICTES :\n1. Supprime TOUTE donnée personnelle identifiante : nom, prénom, email, téléphone, adresse postale, liens LinkedIn/GitHub/réseaux.\n2. Remplace le nom de l'entreprise ACTUELLE (la plus récente dans le CV) par une description générique du type "Société de gestion indépendante, filiale d'un grand groupe public", "Scale-up SaaS B2B, 200 employés", etc.\n3. Remplace chaque mention directe de la personne par "le/la candidat(e)".\n4. CONSERVE absolument TOUTES les expériences professionnelles sans en omettre aucune.\n\nFORMAT DE SORTIE — respecte EXACTEMENT cette structure markdown :\n\n## Résumé\n[Exactement 5 lignes décrivant : années d'expérience totales, secteurs d'activité, expertises clés, type de postes occupés, valeur ajoutée principale]\n\n## Expériences professionnelles\n[Pour chaque expérience, ce format exact — une par une, dans l'ordre chronologique inverse :]\n**[Intitulé du poste]** | [Description anonyme de l'entreprise] | [Dates]\n- [Responsabilité ou mission principale]\n- [Réalisation concrète ou résultat chiffré]\n\n## Formation\n[Pour chaque diplôme :]\n**[Intitulé du diplôme]** | [Nom ou type de l'établissement] | [Année]\n\n## Compétences\n- [Compétence technique ou outil]\n\n## Langues\n- [Langue — niveau]\n\nCV brut :\n${cvText}`;
-      const res=await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions",{
+      const res=await fetch("https://gbgbtbzrcsqmyckrcehe.supabase.co/functions/v1/ai-chat",{
         method:"POST",
-        headers:{"Content-Type":"application/json","Authorization":"Bearer cccc35d995874983b73e8728ec471575.ciArEcWoCrfpeWro"},
-        body:JSON.stringify({model:"glm-5",messages:[{role:"user",content:prompt}],max_tokens:16384})
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({prompt})
       });
       const data=await res.json();
-      if(!res.ok)throw new Error(data.error?.message||"Erreur API GLM-5");
-      const summary=data.choices?.[0]?.message?.content||"";
-      if(!summary)throw new Error("Réponse vide de GLM-5");
+      if(!res.ok)throw new Error(data.error||"Erreur API");
+      const summary=data.result||"";
+      if(!summary)throw new Error("Réponse vide");
       setAiSummary(summary);
       await updateCandidateCvSummary(c.id,{cvText,aiSummary:summary});
       onUpdate(c.id,{cvText,aiSummary:summary});
@@ -832,8 +832,8 @@ const AddMisModal=({open,onClose,onAdd,companies})=>{
     if(!jt.trim())return;setParsing(true);
     try{
       const prompt=`Analyse cette fiche de poste. Réponds UNIQUEMENT en JSON valide sans backticks: {"title":"","company":"","salary":"XXK€","fee":"18%","location":"","contract":"CDI/CDD/Freelance","experience":"","skills":[""],"description":"","requirements":[""],"remote":""}\n\nFiche:\n${jt}`;
-      const res=await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer cccc35d995874983b73e8728ec471575.ciArEcWoCrfpeWro"},body:JSON.stringify({model:"glm-5",messages:[{role:"user",content:prompt}],max_tokens:16384})});
-      const data=await res.json();const raw=(data.choices?.[0]?.message?.content||"");
+      const res=await fetch("https://gbgbtbzrcsqmyckrcehe.supabase.co/functions/v1/ai-chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
+      const data=await res.json();const raw=(data.result||"");
       const r=JSON.parse(raw.replace(/```json|```/g,"").trim());
       setF({title:r.title||"",company:r.company||"",salary:r.salary||"",fee:r.fee||"18%",location:r.location||"",contract:r.contract||"CDI",experience:r.experience||"",skills:r.skills||[],description:r.description||"",requirements:r.requirements||[],remote:r.remote||"",deadline:new Date(Date.now()+90*864e5).toISOString().slice(0,10)});
       setStep("review");
@@ -906,8 +906,8 @@ const GenMsgModal=({open,onClose,type:tp,context:ctx})=>{
       confirm:`Rédige un email de confirmation de RDV entretien en français pour ${ctx.name}. Mission: ${ctx.mission}. Ton: cordial et factuel. Max 80 mots.`
     };
     try{
-      const res=await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer cccc35d995874983b73e8728ec471575.ciArEcWoCrfpeWro"},body:JSON.stringify({model:"glm-5",messages:[{role:"user",content:prompts[tp]||prompts.approach}],max_tokens:16384})});
-      const data=await res.json();setMsg(data.choices?.[0]?.message?.content||"");
+      const res=await fetch("https://gbgbtbzrcsqmyckrcehe.supabase.co/functions/v1/ai-chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:prompts[tp]||prompts.approach})});
+      const data=await res.json();setMsg(data.result||"");
     }catch(e){setMsg("Erreur lors de la génération.");}
     setLoading(false);
   };

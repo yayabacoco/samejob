@@ -37,15 +37,18 @@ const MdCv=({text})=>{
   </div>;
 };
 
-// ── CV PARSER (AI) ───────────────────────────
+// ── CV PARSER (AI via Edge Function) ─────────
+const SUPABASE_URL="https://gbgbtbzrcsqmyckrcehe.supabase.co";
 const parseCv=async(text)=>{
   try{
-    const prompt=`Tu es un expert RH. Reformate ce CV en version anonymisée professionnelle.\n\nRÈGLES D'ANONYMISATION :\n- Supprime : nom, prénom, email, téléphone, adresse, liens LinkedIn/GitHub\n- Remplace le nom de l'entreprise ACTUELLE (la plus récente) par une description générique (ex: "Scale-up SaaS B2B, 200 employés")\n- Ne supprime AUCUNE expérience professionnelle, garde-les toutes\n\nFORMAT DE RÉPONSE en markdown :\n## Résumé\n4 lignes décrivant le profil global, années d'expérience, domaines clés et valeur ajoutée\n\n## Expériences professionnelles\n**Poste** | Entreprise anonyme | Dates\n- Action concrète réalisée\n- Résultat ou réalisation chiffrée\n(répéter pour CHAQUE expérience)\n\n## Formation\n**Diplôme** — École — Année\n\n## Compétences\ncompétence1, compétence2, compétence3...\n\n## Langues\nFrançais natif, Anglais courant...\n\nCV :\n${text}`;
-    const res=await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer cccc35d995874983b73e8728ec471575.ciArEcWoCrfpeWro"},body:JSON.stringify({model:"glm-5",messages:[{role:"user",content:prompt}],max_tokens:16384})});
+    const res=await fetch(`${SUPABASE_URL}/functions/v1/anonymize-cv`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({cvText:text})
+    });
     const data=await res.json();
-    const content=(data.choices?.[0]?.message?.content||"").trim();
-    if(!content)throw new Error("Réponse vide");
-    return content;
+    if(!data.result)throw new Error(data.error||"Réponse vide");
+    return data.result;
   }catch(e){console.error("parseCv error:",e);return null;}
 };
 
