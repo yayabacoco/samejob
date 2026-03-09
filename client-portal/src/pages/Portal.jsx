@@ -412,15 +412,14 @@ export default function Portal({ session }) {
   // ── MESSAGES VIEW ─────────────────────────────
   const MsgView = () => {
     const [txt, setTxt] = useState("");
-    const [ctx, setCtx] = useState("Général");
-    const ctxs = ["Général", ...missions.map(m => m.title)];
-    const flt = ctx === "Général" ? messages : messages.filter(m => m.context === ctx);
-    return <Card style={{ padding: "20px 24px", display: "flex", flexDirection: "column", minHeight: 440 }}>
-      <h3 style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 600, color: C.t1 }}>Messages avec Same Job</h3>
-      <div style={{ display: "flex", gap: 3, marginBottom: 12, flexWrap: "wrap" }}>{ctxs.map(c => <button key={c} onClick={() => setCtx(c)} style={{ background: ctx === c ? C.acc + "14" : C.card2, color: ctx === c ? C.acc : C.t3, border: "none", borderRadius: 7, padding: "4px 11px", fontSize: 10, fontWeight: 600, cursor: "pointer" }}>{c}</button>)}</div>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8, marginBottom: 12, maxHeight: 400, overflow: "auto" }}>
-        {flt.map(m => { const isMe = m.from === 'client'; return <div key={m.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start" }}><div style={{ maxWidth: "78%", background: isMe ? C.acc + "10" : C.card2, borderRadius: 14, borderBottomRightRadius: isMe ? 4 : 14, borderBottomLeftRadius: isMe ? 14 : 4, padding: "11px 15px" }}>{m.context && <div style={{ fontSize: 9, color: C.acc, fontWeight: 600, marginBottom: 2 }}>📌 {m.context}</div>}<div style={{ fontSize: 10, color: C.t3, marginBottom: 3 }}>{isMe ? contactName : 'Same Job'} · {m.date}</div><div style={{ fontSize: 13, color: C.t1, lineHeight: 1.6 }}>{m.text}</div></div></div>; })}
-        {flt.length === 0 && <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: C.t3, fontSize: 12 }}>Aucun message</div>}
+    const endRef = useRef(null);
+    useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages.length]);
+    return <Card style={{ padding: "20px 24px", display: "flex", flexDirection: "column", height: "calc(100vh - 160px)" }}>
+      <h3 style={{ margin: "0 0 14px", fontSize: 15, fontWeight: 600, color: C.t1 }}>Messagerie Same Job</h3>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8, overflowY: "auto", marginBottom: 12 }}>
+        {messages.length === 0 && <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: C.t3, fontSize: 12 }}>Aucun message — écrivez à votre chasseur</div>}
+        {messages.map(m => { const isMe = m.from === 'client'; return <div key={m.id} style={{ display: "flex", justifyContent: isMe ? "flex-end" : "flex-start" }}><div style={{ maxWidth: "78%", background: isMe ? C.acc + "10" : C.card2, borderRadius: 14, borderBottomRightRadius: isMe ? 4 : 14, borderBottomLeftRadius: isMe ? 14 : 4, padding: "11px 15px" }}><div style={{ fontSize: 10, color: C.t3, marginBottom: 3 }}>{isMe ? contactName : 'Same Job'} · {m.date}</div><div style={{ fontSize: 13, color: C.t1, lineHeight: 1.6 }}>{m.text}</div></div></div>; })}
+        <div ref={endRef} />
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         <input value={txt} onChange={e => setTxt(e.target.value)} placeholder="Écrivez à votre chasseur..." onKeyDown={e => { if (e.key === "Enter" && txt.trim()) { handleSend(txt); setTxt(""); } }} style={{ flex: 1, ...IS }} />
