@@ -21,17 +21,31 @@ const IS={width:"100%",background:C.card2,border:`1px solid ${C.border}`,borderR
 
 const dAgo=d=>Math.floor((Date.now()-new Date(d).getTime())/864e5);
 
+// ── MARKDOWN RENDERER ────────────────────────
+const MdCv=({text})=>{
+  if(!text)return null;
+  return <div style={{lineHeight:1.8,fontSize:14,color:C.t1}}>
+    {text.split('\n').map((line,i)=>{
+      if(line.startsWith('## '))return <div key={i} style={{fontSize:12,fontWeight:700,color:C.acc,textTransform:'uppercase',letterSpacing:1,marginTop:18,marginBottom:8,paddingBottom:4,borderBottom:`1px solid ${C.card2}`}}>{line.slice(3)}</div>;
+      if(line.startsWith('# '))return <div key={i} style={{fontSize:16,fontWeight:700,color:C.t1,marginTop:14,marginBottom:6}}>{line.slice(2)}</div>;
+      if(line.startsWith('- ')||line.startsWith('• '))return <div key={i} style={{display:'flex',gap:8,alignItems:'flex-start',marginTop:4,color:C.t2,paddingLeft:8}}><span style={{color:C.acc,flexShrink:0,marginTop:2}}>•</span><span>{line.slice(2)}</span></div>;
+      if(line.trim()==='')return <div key={i} style={{height:6}}/>;
+      const parts=line.split(/\*\*([^*]+)\*\*/g);
+      if(parts.length>1)return <div key={i} style={{marginTop:4}}>{parts.map((p,j)=>j%2===1?<strong key={j} style={{color:C.t1}}>{p}</strong>:p)}</div>;
+      return <div key={i} style={{marginTop:4,color:C.t2}}>{line}</div>;
+    })}
+  </div>;
+};
+
 // ── CV PARSER (AI) ───────────────────────────
-const parseCv=async(text,mission)=>{
+const parseCv=async(text)=>{
   try{
-    const prompt=`Tu es un expert en recrutement. Reformate ce CV en version anonymisée professionnelle.\n\nRÈGLES STRICTES D'ANONYMISATION :\n- Supprime : nom, prénom, email, téléphone, adresse, liens LinkedIn/GitHub.\n- Remplace le nom de l'entreprise ACTUELLE (la plus récente) par une description générique (ex: "Scale-up SaaS B2B, 200 employés").\n- Remplace toute référence directe à la personne par "le/la candidat(e)".\n\nRéponds UNIQUEMENT en JSON valide sans backticks. Inclus TOUTES les expériences du CV sans en omettre aucune :\n{"summary":"4 lignes décrivant le profil global, années d'expérience, domaines clés et valeur ajoutée","experience":[{"title":"Intitulé du poste","company":"Description anonyme de l'entreprise","duration":"Dates ex: 2021-2024","highlights":["Action concrète réalisée","Résultat ou réalisation chiffrée"]}],"skills":["compétence1"],"education":[{"degree":"diplôme","school":"type d'école","year":"année"}],"languages":["Français natif"]}\n\nCV :\n${text}`;
+    const prompt=`Tu es un expert RH. Reformate ce CV en version anonymisée professionnelle.\n\nRÈGLES D'ANONYMISATION :\n- Supprime : nom, prénom, email, téléphone, adresse, liens LinkedIn/GitHub\n- Remplace le nom de l'entreprise ACTUELLE (la plus récente) par une description générique (ex: "Scale-up SaaS B2B, 200 employés")\n- Ne supprime AUCUNE expérience professionnelle, garde-les toutes\n\nFORMAT DE RÉPONSE en markdown :\n## Résumé\n4 lignes décrivant le profil global, années d'expérience, domaines clés et valeur ajoutée\n\n## Expériences professionnelles\n**Poste** | Entreprise anonyme | Dates\n- Action concrète réalisée\n- Résultat ou réalisation chiffrée\n(répéter pour CHAQUE expérience)\n\n## Formation\n**Diplôme** — École — Année\n\n## Compétences\ncompétence1, compétence2, compétence3...\n\n## Langues\nFrançais natif, Anglais courant...\n\nCV :\n${text}`;
     const res=await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer cccc35d995874983b73e8728ec471575.ciArEcWoCrfpeWro"},body:JSON.stringify({model:"glm-5",messages:[{role:"user",content:prompt}],max_tokens:16384})});
     const data=await res.json();
-    const raw=(data.choices?.[0]?.message?.content||"");
-    // Extract JSON robustly — handle extra text around JSON
-    const jsonMatch=raw.match(/\{[\s\S]*\}/);
-    if(!jsonMatch)throw new Error("Pas de JSON dans la réponse Gemini");
-    return JSON.parse(jsonMatch[0]);
+    const content=(data.choices?.[0]?.message?.content||"").trim();
+    if(!content)throw new Error("Réponse vide");
+    return content;
   }catch(e){console.error("parseCv error:",e);return null;}
 };
 
@@ -90,17 +104,19 @@ const CvUpload=({mission,candidate,onSaved})=>{
   const [editing,setEditing]=useState(false);
   const [saving,setSaving]=useState(false);
 
-  function tryParse(s){try{return JSON.parse(s);}catch{return {summary:s,experience:[],skills:[],education:[],languages:[]};}}
+  function tryParse(s){try{const j=JSON.parse(s);return j;}catch{return {summary:s,experience:[],skills:[],education:[],languages:[]};}}
 
   const handlePaste=async()=>{
     if(!rawText.trim())return;
     setStep("parsing");
-    const result=await parseCv(rawText,mission);
-    if(result){setParsed(result);setStep("review");}
-    else{
-      // No API key or error — save raw text as summary
-      const fallback={summary:rawText.slice(0,300)+"...",experience:[],skills:[],education:[],languages:[]};
-      setParsed(fallback);setStep("review");
+    const result=await parseCv(rawText);
+    if(result){
+      // result is plain markdown text — store in summary field
+      setParsed({summary:result,experience:[],skills:[],education:[],languages:[]});
+      setStep("review");
+    }else{
+      setParsed({summary:rawText,experience:[],skills:[],education:[],languages:[]});
+      setStep("review");
     }
   };
 
@@ -136,32 +152,30 @@ const CvUpload=({mission,candidate,onSaved})=>{
           <Btn sm onClick={()=>setEditing(!editing)} style={{background:"rgba(255,255,255,.15)",border:"none",color:C.wh}}><Ic n="edit" s={12} c={C.wh}/> {editing?"Terminer":"Modifier"}</Btn>
         </div>
         <div style={{padding:"22px 24px"}}>
-          <div style={{marginBottom:20,paddingBottom:18,borderBottom:`1px solid ${C.card2}`}}>
-            <div style={{fontSize:11,fontWeight:700,color:C.acc,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Résumé professionnel</div>
-            {editing?<textarea value={parsed.summary} onChange={e=>setParsed({...parsed,summary:e.target.value})} style={{...IS,height:60,resize:"vertical"}}/>:<p style={{fontSize:14,color:C.t1,lineHeight:1.8,margin:0}}>{parsed.summary}</p>}
-          </div>
-          {parsed.experience?.length>0&&<div style={{marginBottom:20,paddingBottom:18,borderBottom:`1px solid ${C.card2}`}}>
-            <div style={{fontSize:11,fontWeight:700,color:C.acc,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Expérience</div>
-            {parsed.experience.map((exp,i)=><div key={i} style={{marginBottom:16,paddingLeft:16,borderLeft:`3px solid ${C.acc}33`}}>
-              <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}}><div style={{fontSize:15,fontWeight:600,color:C.t1}}>{exp.title}</div><div style={{fontSize:12,color:C.acc,fontWeight:600}}>{exp.duration}</div></div>
-              <div style={{fontSize:13,color:C.acc2,marginTop:2,fontStyle:"italic"}}>{exp.company}</div>
-              {exp.highlights?.map((h,j)=><div key={j} style={{fontSize:13,color:C.t2,marginTop:6,display:"flex",gap:8,alignItems:"flex-start"}}><div style={{width:4,height:4,borderRadius:"50%",background:C.acc,marginTop:6,flexShrink:0}}/>{h}</div>)}
-            </div>)}
-          </div>}
-          <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
-            {parsed.skills?.length>0&&<div style={{flex:2,minWidth:180}}>
-              <div style={{fontSize:11,fontWeight:700,color:C.acc,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Compétences</div>
-              <div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{parsed.skills.map(s=><span key={s} style={{background:C.acc+"12",color:C.acc,padding:"4px 12px",borderRadius:8,fontSize:12,fontWeight:600}}>{s}</span>)}</div>
-            </div>}
-            {parsed.education?.length>0&&<div style={{flex:1,minWidth:150}}>
-              <div style={{fontSize:11,fontWeight:700,color:C.acc,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Formation</div>
-              {parsed.education.map((e,i)=><div key={i} style={{fontSize:13,color:C.t2,marginBottom:6,lineHeight:1.4}}><strong style={{color:C.t1}}>{e.degree}</strong><br/>{e.school} ({e.year})</div>)}
-            </div>}
-            {parsed.languages?.length>0&&<div style={{minWidth:120}}>
-              <div style={{fontSize:11,fontWeight:700,color:C.acc,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Langues</div>
-              {parsed.languages.map((l,i)=><div key={i} style={{fontSize:13,color:C.t2,marginBottom:3}}>{l}</div>)}
-            </div>}
-          </div>
+          {editing
+            ?<textarea value={parsed.summary} onChange={e=>setParsed({...parsed,summary:e.target.value})} style={{...IS,height:300,resize:"vertical",lineHeight:1.7,fontFamily:"inherit"}}/>
+            :parsed.experience?.length>0
+              ?<>
+                <div style={{marginBottom:20,paddingBottom:18,borderBottom:`1px solid ${C.card2}`}}>
+                  <div style={{fontSize:11,fontWeight:700,color:C.acc,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Résumé professionnel</div>
+                  <p style={{fontSize:14,color:C.t1,lineHeight:1.8,margin:0}}>{parsed.summary}</p>
+                </div>
+                <div style={{marginBottom:20,paddingBottom:18,borderBottom:`1px solid ${C.card2}`}}>
+                  <div style={{fontSize:11,fontWeight:700,color:C.acc,textTransform:"uppercase",letterSpacing:1,marginBottom:12}}>Expérience</div>
+                  {parsed.experience.map((exp,i)=><div key={i} style={{marginBottom:16,paddingLeft:16,borderLeft:`3px solid ${C.acc}33`}}>
+                    <div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:4}}><div style={{fontSize:15,fontWeight:600,color:C.t1}}>{exp.title}</div><div style={{fontSize:12,color:C.acc,fontWeight:600}}>{exp.duration}</div></div>
+                    <div style={{fontSize:13,color:C.acc2,marginTop:2,fontStyle:"italic"}}>{exp.company}</div>
+                    {exp.highlights?.map((h,j)=><div key={j} style={{fontSize:13,color:C.t2,marginTop:6,display:"flex",gap:8,alignItems:"flex-start"}}><div style={{width:4,height:4,borderRadius:"50%",background:C.acc,marginTop:6,flexShrink:0}}/>{h}</div>)}
+                  </div>)}
+                </div>
+                <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
+                  {parsed.skills?.length>0&&<div style={{flex:2,minWidth:180}}><div style={{fontSize:11,fontWeight:700,color:C.acc,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Compétences</div><div style={{display:"flex",gap:5,flexWrap:"wrap"}}>{parsed.skills.map(s=><span key={s} style={{background:C.acc+"12",color:C.acc,padding:"4px 12px",borderRadius:8,fontSize:12,fontWeight:600}}>{s}</span>)}</div></div>}
+                  {parsed.education?.length>0&&<div style={{flex:1,minWidth:150}}><div style={{fontSize:11,fontWeight:700,color:C.acc,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Formation</div>{parsed.education.map((e,i)=><div key={i} style={{fontSize:13,color:C.t2,marginBottom:6,lineHeight:1.4}}><strong style={{color:C.t1}}>{e.degree}</strong><br/>{e.school} ({e.year})</div>)}</div>}
+                  {parsed.languages?.length>0&&<div style={{minWidth:120}}><div style={{fontSize:11,fontWeight:700,color:C.acc,textTransform:"uppercase",letterSpacing:1,marginBottom:8}}>Langues</div>{parsed.languages.map((l,i)=><div key={i} style={{fontSize:13,color:C.t2,marginBottom:3}}>{l}</div>)}</div>}
+                </div>
+              </>
+              :<MdCv text={parsed.summary}/>
+          }
         </div>
         <div style={{background:C.card2,padding:"10px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div style={{fontSize:10,color:C.t3}}>Document confidentiel — Same Job</div>
