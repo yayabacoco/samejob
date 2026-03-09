@@ -317,6 +317,22 @@ export async function createCompany(data) {
   return comp
 }
 
+export async function updateCandidateInfo(id, data) {
+  const { error } = await supabase
+    .from('candidates')
+    .update({
+      full_name: data.name,
+      job_title: data.role,
+      email: data.email,
+      phone: data.phone,
+      salary_expectation: data.salary,
+      availability: data.available ? 'disponible' : 'en_poste',
+      skills: data.skills,
+    })
+    .eq('id', id)
+  if (error) throw error
+}
+
 export async function assignMissionToCandidate(candidateId, missionId) {
   const { error } = await supabase
     .from('candidate_missions')

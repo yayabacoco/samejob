@@ -5,6 +5,7 @@ import {
   updateCandidateStage, updateCandidateScores,
   addCandidateInteraction, addCompanyInteraction,
   createCandidate, createCompany, createMission,
+  updateCandidateInfo,
   assignMissionToCandidate, unassignMissionFromCandidate,
   STAGE_TO_DB, COMPANY_STATUS_TO_DB, MISSION_STATUS_TO_DB,
 } from '../lib/api'
@@ -311,9 +312,24 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
   const [noteSaving,setNoteSaving]=useState(false);
   const [editScore,setEditScore]=useState(null);
   const [msgType,setMsgType]=useState(null);
+  const [editing,setEditing]=useState(false);
+  const [editForm,setEditForm]=useState({});
   const si=STAGES.indexOf(c.stage);
   const sc=avgS(c.scores);
   const notes=(c.history||[]).filter(h=>h.type==="note");
+
+  const startEdit=()=>{
+    setEditForm({name:c.name,role:c.role,email:c.email,phone:c.phone,salary:c.salary,available:c.available,skills:(c.skills||[]).join(", ")});
+    setEditing(true);
+  };
+  const saveEdit=()=>{
+    const skills=editForm.skills.split(",").map(s=>s.trim()).filter(Boolean);
+    const initials=n=>(n||'??').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+    const updated={...editForm,skills,available:editForm.available,avatar:initials(editForm.name)};
+    onUpdate(c.id,updated);
+    updateCandidateInfo(c.id,updated).catch(console.error);
+    setEditing(false);
+  };
 
   const addH=()=>{if(!hText.trim())return;onAddHist(c.id,{date:today(),type:hType,text:hText});setHText("");setShowAdd(false);};
   const saveNote=()=>{
@@ -340,13 +356,28 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
         <div style={{flex:1,minWidth:260}}>
           <div style={{display:"flex",gap:12,alignItems:"center",marginBottom:14}}>
             <Av i={c.avatar} s={52} c={sc>=85?C.ok:C.acc}/>
-            <div>
-              <h2 style={{margin:0,fontSize:20,color:C.t1}}>{c.name}</h2>
-              <div style={{color:C.t2,fontSize:13,marginTop:1}}>{c.role} · {c.salary}</div>
-              <div style={{color:C.t3,fontSize:11,marginTop:1}}>{c.email} · {c.phone}</div>
+            <div style={{flex:1}}>
+              {editing
+                ? <Inp value={editForm.name} onChange={e=>setEditForm(f=>({...f,name:e.target.value}))} style={{marginBottom:4}}/>
+                : <h2 style={{margin:0,fontSize:20,color:C.t1}}>{c.name}</h2>}
+              {editing
+                ? <div style={{display:"flex",gap:6,marginTop:4}}><Inp value={editForm.role} onChange={e=>setEditForm(f=>({...f,role:e.target.value}))} placeholder="Poste actuel" style={{flex:1}}/><Inp value={editForm.salary} onChange={e=>setEditForm(f=>({...f,salary:e.target.value}))} placeholder="Salaire" style={{width:110}}/></div>
+                : <div style={{color:C.t2,fontSize:13,marginTop:1}}>{c.role} · {c.salary}</div>}
+              {editing
+                ? <div style={{display:"flex",gap:6,marginTop:4}}><Inp value={editForm.email} onChange={e=>setEditForm(f=>({...f,email:e.target.value}))} placeholder="Email" style={{flex:1}}/><Inp value={editForm.phone} onChange={e=>setEditForm(f=>({...f,phone:e.target.value}))} placeholder="Téléphone" style={{width:130}}/></div>
+                : <div style={{color:C.t3,fontSize:11,marginTop:1}}>{c.email} · {c.phone}</div>}
             </div>
+            {!editing
+              ? <Btn sm onClick={startEdit} style={{alignSelf:"flex-start"}}><Ic n="edit" s={13}/></Btn>
+              : <div style={{display:"flex",gap:5,alignSelf:"flex-start"}}><Btn sm pr onClick={saveEdit}><Ic n="check" s={13} c={C.wh}/> Sauver</Btn><Btn sm onClick={()=>setEditing(false)}>Annuler</Btn></div>}
           </div>
-          <div style={{display:"flex",gap:4,marginBottom:12}}>{STAGES.map((s,i)=><div key={s} onClick={()=>onUpdate(c.id,{stage:s})} style={{flex:1,textAlign:"center",padding:"5px 2px",borderRadius:7,background:i<=si?SC[si]+"20":C.card2,color:i<=si?SC[si]:C.t3,fontSize:9,fontWeight:600,cursor:"pointer",border:s===c.stage?`2px solid ${SC[si]}`:"2px solid transparent",transition:"all .2s"}}>{s}</div>)}</div>
+          {editing&&<Inp label="Compétences (séparées par des virgules)" value={editForm.skills} onChange={e=>setEditForm(f=>({...f,skills:e.target.value}))} placeholder="React, Node.js, SQL..." style={{marginBottom:10}}/>}
+          {editing&&<div style={{display:"flex",gap:8,alignItems:"center",marginBottom:10}}>
+            <span style={{fontSize:12,color:C.t2}}>Disponibilité :</span>
+            <Btn sm onClick={()=>setEditForm(f=>({...f,available:true}))} style={{background:editForm.available?C.ok+"20":"transparent",color:editForm.available?C.ok:C.t3,border:`1px solid ${editForm.available?C.ok+"44":C.border}`}}>Disponible</Btn>
+            <Btn sm onClick={()=>setEditForm(f=>({...f,available:false}))} style={{background:!editForm.available?C.err+"20":"transparent",color:!editForm.available?C.err:C.t3,border:`1px solid ${!editForm.available?C.err+"44":C.border}`}}>En poste</Btn>
+          </div>}
+          {!editing&&<><div style={{display:"flex",gap:4,marginBottom:12}}>{STAGES.map((s,i)=><div key={s} onClick={()=>onUpdate(c.id,{stage:s})} style={{flex:1,textAlign:"center",padding:"5px 2px",borderRadius:7,background:i<=si?SC[si]+"20":C.card2,color:i<=si?SC[si]:C.t3,fontSize:9,fontWeight:600,cursor:"pointer",border:s===c.stage?`2px solid ${SC[si]}`:"2px solid transparent",transition:"all .2s"}}>{s}</div>)}</div>
           <div style={{display:"flex",gap:5,flexWrap:"wrap",marginBottom:10}}>{c.skills.map(s=><Badge key={s} c={C.acc2}>{s}</Badge>)}</div>
           <div style={{display:"flex",gap:5,flexWrap:"wrap",fontSize:11}}>
             <Badge c={c.available?C.ok:C.err}>{c.available?"Disponible":"En poste"}</Badge>
@@ -356,7 +387,7 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
           </div>
           {msgOptions.length>0&&<div style={{display:"flex",gap:5,flexWrap:"wrap",marginTop:10}}>
             {msgOptions.map(o=><Btn key={o.type} sm onClick={()=>setMsgType(o.type)} style={{background:o.cl+"15",color:o.cl,border:`1px solid ${o.cl}33`}}><Ic n={o.ic} s={12} c={o.cl}/> {o.label}</Btn>)}
-          </div>}
+          </div>}</>}
         </div>
         <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
           <Radar scores={c.scores} size={155}/>
