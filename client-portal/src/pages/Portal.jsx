@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase'
    SAME JOB — Client Portal V2 (Supabase)
    ═══════════════════════════════════════════════ */
 
-const C={bg:"#f5f7fb",bg2:"#ffffff",card:"#ffffff",card2:"#f0f2f8",border:"#e0e4ee",borderH:"#c4c9da",acc:"#6c5ce7",acc2:"#a29bfe",acc3:"#00cec9",ok:"#00b894",warn:"#f39c12",err:"#e74c3c",pink:"#e84393",hot:"#ff6b6b",t1:"#1a1d2e",t2:"#555b74",t3:"#8890a6",wh:"#fff",shadow:"0 2px 8px rgba(108,92,231,.05)",shadowM:"0 6px 20px rgba(0,0,0,.07)"};
+const C={bg:"#F8FAFC",bg2:"#FFFFFF",card:"#FFFFFF",card2:"#F1F5F9",border:"#E2E8F0",borderH:"#CBD5E1",acc:"#0369A1",acc2:"#0EA5E9",acc3:"#0891B2",ok:"#059669",warn:"#D97706",err:"#DC2626",hot:"#E11D48",t1:"#0F172A",t2:"#475569",t3:"#94A3B8",wh:"#fff",shadow:"0 1px 3px rgba(0,0,0,.06)",shadowM:"0 4px 16px rgba(0,0,0,.08)"};
 const DIMS=["Technique","Soft Skills","Motivation","Fit culturel","Disponibilité"];
 const P={briefcase:"M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16",users:"M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8z",msg:"M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z",check:"M20 6L9 17l-5-5",x:"M18 6L6 18M6 6l12 12",clock:"M12 22a10 10 0 100-20 10 10 0 000 20zM12 6v6l4 2",chevR:"M9 18l6-6-6-6",chevL:"M15 18l-6-6 6-6",send:"M22 2L11 13M22 2l-7 20-4-9-9-4z",calendar:"M19 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM16 2v4M8 2v4M3 10h18",compare:"M18 20V10M12 20V4M6 20v-6",file:"M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6",bell:"M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0",zap:"M13 2L3 14h9l-1 8 10-12h-9z",fire:"M12 22c4.97 0 9-3.58 9-8 0-2.52-2.04-5.77-3.57-7.77-.48-.63-1.43-.63-1.91 0C14.05 8.23 12 11.48 12 14c0 2.21-1.79 4-4 4-.6 0-1.17-.13-1.68-.37C8.06 20.37 9.88 22 12 22z",activity:"M22 12h-4l-3 9L9 3l-3 9H2",gift:"M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 110-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 100-5C13 2 12 7 12 7z",logout:"M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"};
 const Ic=({n,s=18,c:cl})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl||"currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{(P[n]||"").split("M").filter(Boolean).map((d,i)=><path key={i} d={"M"+d}/>)}</svg>;
@@ -59,7 +59,7 @@ const ProgressBar=({profiles:cn})=>{
   const steps=[{l:"Recherche",done:true},{l:"Shortlist",done:hasSL},{l:"Entretiens",done:hasInt},{l:"Offre",done:hasOffer},{l:"Placement",done:placed}];
   return <div>
     <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>{steps.map((s,i)=><div key={i} style={{fontSize:10,fontWeight:600,color:s.done?C.acc:C.t3,textAlign:"center",flex:1}}>{s.l}</div>)}</div>
-    <div style={{height:6,background:C.card2,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${pct}%`,background:`linear-gradient(90deg,${C.acc},${C.acc3})`,borderRadius:3,transition:"width .6s ease"}}/></div>
+    <div style={{height:6,background:C.card2,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:`${pct}%`,background:C.acc,borderRadius:3,transition:"width .6s ease"}}/></div>
     <div style={{textAlign:"right",fontSize:11,color:C.acc,fontWeight:600,marginTop:3}}>{pct}%</div>
   </div>;
 };
@@ -465,7 +465,7 @@ export default function Portal({ session }) {
       <div style={{ width: 245, background: C.bg2, borderRight: `1px solid ${C.border}`, display: "flex", flexDirection: "column", flexShrink: 0 }}>
         <div style={{ padding: "22px 18px 20px", borderBottom: `1px solid ${C.border}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg,${C.acc},${C.acc3})`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: C.wh }}>SJ</div>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: C.acc, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 14, color: C.wh }}>SJ</div>
             <div><div style={{ fontWeight: 700, fontSize: 15, color: C.t1 }}>Same Job</div><div style={{ fontSize: 10, color: C.t3 }}>Espace Client</div></div>
           </div>
           <div style={{ background: C.card2, borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>

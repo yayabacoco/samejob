@@ -9,7 +9,7 @@ import {
    SAME JOB — Candidate Portal V3
    ═══════════════════════════════════════════════ */
 
-const C={bg:"#f7f8fc",bg2:"#ffffff",card:"#ffffff",card2:"#f0f2f8",border:"#e2e5ef",acc:"#6c5ce7",acc2:"#a29bfe",acc3:"#00cec9",ok:"#00b894",warn:"#f39c12",err:"#e74c3c",t1:"#1a1d2e",t2:"#555b74",t3:"#8890a6",wh:"#fff",shadow:"0 2px 8px rgba(108,92,231,.05)",shadowM:"0 6px 20px rgba(0,0,0,.07)"};
+const C={bg:"#F8FAFC",bg2:"#FFFFFF",card:"#FFFFFF",card2:"#F1F5F9",border:"#E2E8F0",borderH:"#CBD5E1",acc:"#0369A1",acc2:"#0EA5E9",acc3:"#0891B2",ok:"#059669",warn:"#D97706",err:"#DC2626",t1:"#0F172A",t2:"#475569",t3:"#94A3B8",wh:"#fff",shadow:"0 1px 3px rgba(0,0,0,.06)",shadowM:"0 4px 16px rgba(0,0,0,.08)"};
 
 const P={briefcase:"M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2zM16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16",user:"M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z",upload:"M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12",check:"M20 6L9 17l-5-5",clock:"M12 22a10 10 0 100-20 10 10 0 000 20zM12 6v6l4 2",calendar:"M19 4H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zM16 2v4M8 2v4M3 10h18",chevR:"M9 18l6-6-6-6",chevL:"M15 18l-6-6 6-6",file:"M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6",edit:"M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.12 2.12 0 013 3L12 15l-4 1 1-4z",x:"M18 6L6 18M6 6l12 12",zap:"M13 2L3 14h9l-1 8 10-12h-9z",spark:"M13 2L3 14h9l-1 8 10-12h-9z",mappin:"M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z",link:"M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71",eye:"M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z",logout:"M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9",star:"M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"};
 const Ic=({n,s=18,c:cl})=><svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={cl||"currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{(P[n]||"").split("M").filter(Boolean).map((d,i)=><path key={i} d={"M"+d}/>)}</svg>;
@@ -158,15 +158,11 @@ const CvUpload=({mission,candidate,onSaved})=>{
       </div>
     </div>}
     {step==="parsing"&&<div style={{padding:"36px 20px",textAlign:"center"}}>
-      <div style={{position:"relative",width:56,height:56,margin:"0 auto 20px"}}>
-        <div style={{position:"absolute",inset:0,borderRadius:"50%",border:`3px solid ${C.acc}22`}}/>
-        <div style={{position:"absolute",inset:0,borderRadius:"50%",border:`3px solid transparent`,borderTopColor:C.acc,animation:"spin .9s linear infinite"}}/>
-        <div style={{position:"absolute",inset:8,borderRadius:"50%",border:`2px solid transparent`,borderTopColor:C.acc3,animation:"spin 1.4s linear infinite reverse"}}/>
-      </div>
+      <div style={{width:36,height:36,margin:"0 auto 20px",borderRadius:"50%",border:`3px solid ${C.border}`,borderTopColor:C.acc,animation:"spin .8s linear infinite"}}/>
       <div style={{fontSize:15,fontWeight:700,color:C.t1,marginBottom:8}}>Traitement IA en cours</div>
       <div style={{fontSize:13,color:C.acc,fontWeight:500,minHeight:20,transition:"opacity .3s"}}>{PARSING_STEPS[parseMsg]}</div>
-      <div style={{marginTop:20,background:C.card2,borderRadius:10,padding:"10px 16px",display:"inline-flex",alignItems:"center",gap:8,fontSize:12,color:C.warn}}>
-        <span style={{fontSize:16}}>⚠️</span> Ne fermez pas cette page — le traitement est en cours
+      <div style={{marginTop:20,background:C.warn+"12",border:`1px solid ${C.warn}30`,borderRadius:8,padding:"10px 16px",display:"inline-flex",alignItems:"center",gap:8,fontSize:12,color:C.warn,fontWeight:500}}>
+        <Ic n="clock" s={13} c={C.warn}/> Ne fermez pas cette page — traitement en cours
       </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>}
@@ -176,7 +172,7 @@ const CvUpload=({mission,candidate,onSaved})=>{
         <div><div style={{fontSize:13,fontWeight:600,color:C.ok}}>CV prêt</div><div style={{fontSize:11,color:C.t2,marginTop:1}}>Vérifiez et validez pour l'envoyer à votre chasseur</div></div>
       </div>
       <div style={{background:C.wh,borderRadius:16,border:`1px solid ${C.border}`,overflow:"hidden",marginBottom:16,boxShadow:C.shadowM}}>
-        <div style={{background:`linear-gradient(135deg,${C.acc},${C.acc3})`,padding:"18px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{background:C.acc,padding:"18px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div><div style={{fontSize:18,fontWeight:700,color:C.wh}}>Candidat — Profil confidentiel</div><div style={{fontSize:12,color:"rgba(255,255,255,.7)",marginTop:2}}>Adapté pour : {mission}</div></div>
           <Btn sm onClick={()=>setEditing(!editing)} style={{background:"rgba(255,255,255,.15)",border:"none",color:C.wh}}><Ic n="edit" s={12} c={C.wh}/> {editing?"Terminer":"Modifier"}</Btn>
         </div>
@@ -400,7 +396,7 @@ export default function Portal({session}){
     <div style={{width:240,background:C.bg2,borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column",flexShrink:0}}>
       <div style={{padding:"22px 20px 24px",borderBottom:`1px solid ${C.border}`}}>
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
-          <div style={{width:36,height:36,borderRadius:10,background:`linear-gradient(135deg,${C.acc},${C.acc3})`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:14,color:C.wh}}>SJ</div>
+          <div style={{width:36,height:36,borderRadius:10,background:C.acc,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:14,color:C.wh}}>SJ</div>
           <div><div style={{fontWeight:700,fontSize:15,color:C.t1}}>Same Job</div><div style={{fontSize:10,color:C.t3}}>Espace Candidat</div></div>
         </div>
         <div style={{background:C.card2,borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:10}}>

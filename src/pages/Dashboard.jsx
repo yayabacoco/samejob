@@ -45,14 +45,15 @@ const MdCV=({text,colors})=>{
 
 // ── THEME ────────────────────────────────────
 const C = {
-  bg:"#0b0d14",bg2:"#12141e",card:"#181b27",card2:"#1f2333",
-  border:"#282d42",borderH:"#3d4460",
-  acc:"#6c5ce7",acc2:"#a29bfe",acc3:"#00cec9",
-  ok:"#00b894",warn:"#fdcb6e",err:"#e17055",pink:"#fd79a8",
-  t1:"#f0f0f8",t2:"#a0a8c0",t3:"#6a7190",wh:"#fff",
+  bg:"#0A0E1A",bg2:"#111827",card:"#1A2030",card2:"#212838",
+  border:"#2E3650",borderH:"#3D4A66",
+  acc:"#0EA5E9",acc2:"#38BDF8",acc3:"#22C55E",
+  ok:"#22C55E",warn:"#F59E0B",err:"#EF4444",
+  t1:"#F1F5F9",t2:"#94A3B8",t3:"#475569",wh:"#fff",
+  shadow:"0 1px 3px rgba(0,0,0,.3)",shadowM:"0 8px 24px rgba(0,0,0,.4)",
 };
 const STAGES=["Sourcing","Entretien interne","Shortlist","Entretien client","Offre","Placé"];
-const SC=[C.t3,C.warn,C.acc2,C.acc,C.pink,C.ok];
+const SC=[C.t3,C.warn,C.acc2,C.acc,C.acc,C.ok];
 const DIMS=["Technique","Soft Skills","Motivation","Fit culturel","Disponibilité"];
 const TEAM=[{id:1,n:"Vous",i:"SJ",c:C.acc},{id:2,n:"Alice Martin",i:"AM",c:C.pink},{id:3,n:"Marc Durand",i:"MD",c:C.acc3}];
 
@@ -963,7 +964,7 @@ const NAV=[{k:"myday",l:"Ma journée",i:"sun"},{k:"crm",l:"Entreprises",i:"compa
 
 // ── LOADING SCREEN ───────────────────────────
 const LoadingScreen=()=><div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100vh",background:C.bg,gap:16}}>
-  <div style={{width:42,height:42,borderRadius:12,background:`linear-gradient(135deg,${C.acc},${C.acc3})`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,color:C.wh}}>SJ</div>
+  <div style={{width:42,height:42,borderRadius:12,background:C.acc,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:16,color:C.wh}}>SJ</div>
   <div style={{display:"flex",alignItems:"center",gap:10,color:C.t2,fontSize:14}}>
     <span style={{display:"inline-block",width:18,height:18,border:`2px solid ${C.border}`,borderTopColor:C.acc,borderRadius:"50%",animation:"spin .8s linear infinite"}}/>
     Chargement des données...
@@ -1160,7 +1161,7 @@ export default function Dashboard({ session }) {
     {/* Sidebar */}
     <div style={{width:side?215:60,background:C.bg2,borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column",transition:"width .2s",flexShrink:0,overflow:"hidden"}}>
       <div style={{padding:side?"18px 16px 20px":"18px 10px 20px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}} onClick={()=>setSide(!side)}>
-        <div style={{width:34,height:34,borderRadius:10,background:`linear-gradient(135deg,${C.acc},${C.acc3})`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:14,color:C.wh,flexShrink:0}}>SJ</div>
+        <div style={{width:34,height:34,borderRadius:10,background:C.acc,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:800,fontSize:14,color:C.wh,flexShrink:0}}>SJ</div>
         {side&&<div><div style={{fontWeight:700,fontSize:15,color:C.t1,lineHeight:1.1}}>Same Job</div><div style={{fontSize:10,color:C.t3}}>Headhunting</div></div>}
       </div>
       <nav style={{flex:1,padding:side?"0 8px":"0 6px"}}>

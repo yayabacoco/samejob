@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { signIn } from '../lib/api'
 
-const C = { bg: "#f5f7fb", card: "#ffffff", border: "#e0e4ee", acc: "#6c5ce7", acc3: "#00cec9", t1: "#1a1d2e", t2: "#555b74", t3: "#8890a6", err: "#e74c3c", wh: "#fff" }
+const C = { bg: "#F8FAFC", card: "#ffffff", border: "#E2E8F0", acc: "#0369A1", t1: "#0F172A", t2: "#475569", t3: "#94A3B8", err: "#DC2626", wh: "#fff" }
 const IS = { width: "100%", background: "#f0f2f8", border: `1px solid ${C.border}`, borderRadius: 10, padding: "12px 14px", color: C.t1, fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }
 
 export default function Login({ onLogin }) {
