@@ -605,8 +605,8 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
         <div style={{background:cvPublished?C.ok+"10":C.acc+"0a",border:`1px solid ${cvPublished?C.ok+"44":C.acc+"33"}`,borderRadius:12,padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
           <Ic n={cvPublished?"check":"spark"} s={16} c={cvPublished?C.ok:C.acc}/>
           <div style={{flex:1}}>
-            <div style={{fontSize:13,fontWeight:700,color:cvPublished?C.ok:C.t1}}>{cvPublished?"CV publié sur le profil client":"CV anonymisé prêt à publier"}</div>
-            <div style={{fontSize:11,color:C.t3,marginTop:1}}>{cvPublished?"Visible par le client dans la fiche profil":"Vérifiez le contenu avant de le rendre visible au client"}</div>
+            <div style={{fontSize:13,fontWeight:700,color:cvPublished?C.ok:C.t1}}>{cvPublished?"CV publié — client & candidat":"CV anonymisé prêt à publier"}</div>
+            <div style={{fontSize:11,color:C.t3,marginTop:1}}>{cvPublished?"Visible dans le portail client et le compte candidat":"Un clic pour le rendre visible au client et au candidat"}</div>
           </div>
           <div style={{display:"flex",gap:6,flexShrink:0}}>
             <Btn sm onClick={()=>setCvStep("edit")}><Ic n="edit" s={12}/> Modifier</Btn>
@@ -618,14 +618,17 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
               toast("Téléchargé","ok");
             }}><Ic n="download" s={12}/> Télécharger</Btn>
             <Btn sm pr onClick={publishToClient} style={{background:cvPublished?C.ok:C.acc}}>
-              <Ic n="send" s={12} c={C.wh}/> {cvPublished?"Republier":"Publier sur le profil client"}
+              <Ic n="send" s={12} c={C.wh}/> {cvPublished?"Republier":"Publier (client + candidat)"}
             </Btn>
           </div>
         </div>
         <div style={{background:C.wh,borderRadius:16,border:`1px solid ${C.border}`,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,.06)"}}>
           <div style={{background:C.acc,padding:"14px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div><div style={{fontSize:15,fontWeight:700,color:C.wh}}>Candidat — Profil confidentiel</div><div style={{fontSize:11,color:"rgba(255,255,255,.7)",marginTop:1}}>Mission : {c.missions[0]||"—"} · {c.company||"—"}</div></div>
-            {cvPublished&&<div style={{background:C.ok,color:C.wh,fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:20}}>Visible client</div>}
+            {cvPublished&&<div style={{display:"flex",gap:6}}>
+              <div style={{background:C.ok,color:C.wh,fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:20}}>✓ Client</div>
+              <div style={{background:C.ok,color:C.wh,fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:20}}>✓ Candidat</div>
+            </div>}
           </div>
           <div style={{padding:"20px 24px",maxHeight:500,overflow:"auto"}}><MdCV text={aiSummary} colors={C}/></div>
           <div style={{background:C.card2,padding:"8px 20px",display:"flex",justifyContent:"space-between"}}>
