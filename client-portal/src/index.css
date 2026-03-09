@@ -1,0 +1,4 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f7fb; }
+button { font-family: inherit; }
+input, textarea, select { font-family: inherit; }
