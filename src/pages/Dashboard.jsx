@@ -228,6 +228,18 @@ const CrmDetail=({company:co,S,onBack,onAddHist,onMsg,onToast})=>{
   const msgEndRef=useRef(null);
   const unread=msgs.filter(m=>m.isFromClient).length;
   useEffect(()=>{getCompanyMessages(co.id).then(setMsgs);},[co.id]);
+  useEffect(()=>{
+    const ch=supabase.channel(`crm-msgs-${co.id}`)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'company_messages',filter:`company_id=eq.${co.id}`},
+        (payload)=>{
+          const m=payload.new;
+          if(m.is_from_client){
+            setMsgs(prev=>[...prev,{id:m.id,text:m.text,isFromClient:true,date:(m.created_at||'').slice(0,10),by:'Client',context:null}]);
+          }
+        })
+      .subscribe();
+    return()=>supabase.removeChannel(ch);
+  },[co.id]);
   const [portalEmail,setPortalEmail]=useState(co.contacts?.[0]?.email||"");
   const [portalCreating,setPortalCreating]=useState(false);
   const [portalCreds,setPortalCreds]=useState(null);
@@ -961,10 +973,13 @@ const GenMsgModal=({open,onClose,type:tp,context:ctx})=>{
 };
 
 // ── MESSAGES HUB ─────────────────────────────
-const MessagesHub=({S,onSelectCompany})=>{
+const MessagesHub=({S,onSelectCompany,allMsgs})=>{
   const companies=S.companies||[];
-  const withMsgs=companies.filter(c=>(c.history||[]).some(h=>h.type==="message"||h.isFromClient));
-  const clientMsgs=companies.reduce((acc,c)=>{const n=(c.history||[]).filter(h=>h.isFromClient).length;return acc+n;},0);
+  // Group messages by company_id
+  const byCompany={};
+  (allMsgs||[]).forEach(m=>{if(!byCompany[m.company_id])byCompany[m.company_id]=[];byCompany[m.company_id].push(m);});
+  const withMsgs=companies.filter(c=>byCompany[c.id]?.length>0);
+  const clientMsgs=(allMsgs||[]).filter(m=>m.is_from_client).length;
   if(withMsgs.length===0)return(
     <Bx style={{padding:32,textAlign:"center"}}>
       <Ic n="msg" s={32} c={C.t3}/>
@@ -978,9 +993,9 @@ const MessagesHub=({S,onSelectCompany})=>{
         <Ic n="bell" s={15} c={C.acc}/>{clientMsgs} message{clientMsgs>1?"s":""} client{clientMsgs>1?"s":""} reçu{clientMsgs>1?"s":""}
       </div>}
       {withMsgs.map(co=>{
-        const msgs=(co.history||[]).filter(h=>h.type==="message"||h.isFromClient);
+        const msgs=byCompany[co.id]||[];
         const last=msgs[msgs.length-1];
-        const clientCount=(co.history||[]).filter(h=>h.isFromClient).length;
+        const clientCount=msgs.filter(m=>m.is_from_client).length;
         return(
           <Bx key={co.id} onClick={()=>onSelectCompany(co.id)} style={{padding:"14px 16px",marginBottom:8,cursor:"pointer",borderLeft:clientCount>0?`3px solid ${C.acc}`:`3px solid transparent`}} onMouseEnter={e=>e.currentTarget.style.background=C.card2} onMouseLeave={e=>e.currentTarget.style.background=C.card}>
             <div style={{display:"flex",alignItems:"center",gap:12}}>
@@ -990,7 +1005,7 @@ const MessagesHub=({S,onSelectCompany})=>{
                   <span style={{fontSize:14,fontWeight:600,color:C.t1}}>{co.name}</span>
                   {clientCount>0&&<span style={{background:C.acc,color:C.wh,fontSize:9,fontWeight:700,borderRadius:10,padding:"2px 7px",flexShrink:0}}>{clientCount}</span>}
                 </div>
-                {last&&<div style={{fontSize:12,color:C.t2,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}><span style={{color:last.isFromClient?C.acc:C.t3,fontWeight:600}}>{last.isFromClient?"Client":"Vous"} · </span>{last.text}</div>}
+                {last&&<div style={{fontSize:12,color:C.t2,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}><span style={{color:last.is_from_client?C.acc:C.t3,fontWeight:600}}>{last.is_from_client?"Client":"Vous"} · </span>{last.text}</div>}
               </div>
               <Ic n="chevR" s={14} c={C.t3}/>
             </div>
@@ -1036,6 +1051,7 @@ export default function Dashboard({ session }) {
   const [globalSearch,setGlobalSearch]=useState("");
   const [showSearch,setShowSearch]=useState(false);
   const [showNotifs,setShowNotifs]=useState(false);
+  const [allMsgs,setAllMsgs]=useState([]);
 
   const userId = session?.user?.id;
   const userEmail = session?.user?.email || 'Vous';
@@ -1053,9 +1069,9 @@ export default function Dashboard({ session }) {
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'company_messages'},
         (payload)=>{
           const m=payload.new;
+          setAllMsgs(prev=>[...prev,m]);
           if(m.is_from_client){
             showToast('Nouveau message client reçu','ok');
-            getCompanies(userId).then(c=>setCompanies(c||[])).catch(console.error);
           }
         })
       .subscribe();
@@ -1065,16 +1081,18 @@ export default function Dashboard({ session }) {
   async function loadData() {
     setLoading(true);
     try {
-      const [comps, cands, mis, rems] = await Promise.all([
+      const [comps, cands, mis, rems, msgsRes] = await Promise.all([
         getCompanies(userId).catch(()=>null),
         getCandidates(userId).catch(()=>null),
         getMissions(userId).catch(()=>null),
         getReminders().catch(()=>[]),
+        supabase.from('company_messages').select('*').order('created_at',{ascending:true}).catch(()=>({data:[]})),
       ]);
       setCompanies(comps || []);
       setCandidates(cands || []);
       setMissions(mis || []);
       setReminders(rems);
+      setAllMsgs(msgsRes?.data || []);
     } catch(e) {
       console.error("Erreur chargement données:", e);
     }
@@ -1180,7 +1198,7 @@ export default function Dashboard({ session }) {
       case "crm":return <CrmList S={S} onSel={setSelComp}/>;
       case "pipeline":return <PipelineList S={S} onSel={setSelCand} onStage={(id,s)=>updateCand(id,{stage:s})}/>;
       case "missions":return <MissionsList S={S} onSel={setSelMis}/>;
-      case "messages":return <MessagesHub S={S} onSelectCompany={id=>{setSelComp(id);setPage("crm");}}/>;
+      case "messages":return <MessagesHub S={S} allMsgs={allMsgs} onSelectCompany={id=>{setSelComp(id);setPage("crm");}}/>;
       case "reporting":return <Reporting S={S}/>;
       default:return null;
     }
