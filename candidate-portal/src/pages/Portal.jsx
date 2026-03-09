@@ -27,11 +27,16 @@ const parseCv=async(text,mission)=>{
     const apiKey=import.meta.env.VITE_GEMINI_API_KEY||"AIzaSyAgfVInb2XlzkQZKgy18P0HfcdCpeS73OI";
     if(!apiKey)return null;
     const prompt=`Tu es un expert en recrutement. Reformate ce CV en version anonymisée professionnelle.\n\nRÈGLES STRICTES D'ANONYMISATION :\n- Supprime : nom, prénom, email, téléphone, adresse, liens LinkedIn/GitHub.\n- Remplace le nom de l'entreprise ACTUELLE (la plus récente) par une description générique (ex: "Scale-up SaaS B2B, 200 employés").\n- Remplace toute référence directe à la personne par "le/la candidat(e)".\n\nRéponds UNIQUEMENT en JSON valide sans backticks. Inclus TOUTES les expériences du CV sans en omettre aucune :\n{"summary":"4 lignes décrivant le profil global, années d'expérience, domaines clés et valeur ajoutée","experience":[{"title":"Intitulé du poste","company":"Description anonyme de l'entreprise","duration":"Dates ex: 2021-2024","highlights":["Action concrète réalisée","Résultat ou réalisation chiffrée"]}],"skills":["compétence1"],"education":[{"degree":"diplôme","school":"type d'école","year":"année"}],"languages":["Français natif"]}\n\nCV :\n${text}`;
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:4096,temperature:0.3}})});
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:8192,temperature:0.3}})});
     const data=await res.json();
+    console.log("Gemini CV response:", JSON.stringify(data).slice(0,500));
     const raw=(data.candidates?.[0]?.content?.parts?.[0]?.text||"");
-    return JSON.parse(raw.replace(/```json|```/g,"").trim());
-  }catch(e){return null;}
+    console.log("finishReason:", data.candidates?.[0]?.finishReason);
+    // Extract JSON robustly — handle extra text around JSON
+    const jsonMatch=raw.match(/\{[\s\S]*\}/);
+    if(!jsonMatch)throw new Error("Pas de JSON dans la réponse Gemini");
+    return JSON.parse(jsonMatch[0]);
+  }catch(e){console.error("parseCv error:",e);return null;}
 };
 
 // ── STEPPER ──────────────────────────────────
