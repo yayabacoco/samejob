@@ -440,7 +440,7 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
       const res=await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions",{
         method:"POST",
         headers:{"Content-Type":"application/json","Authorization":"Bearer cccc35d995874983b73e8728ec471575.ciArEcWoCrfpeWro"},
-        body:JSON.stringify({model:"glm-5",messages:[{role:"user",content:prompt}],max_tokens:8192})
+        body:JSON.stringify({model:"glm-5",messages:[{role:"user",content:prompt}],max_tokens:16384})
       });
       const data=await res.json();
       if(!res.ok)throw new Error(data.error?.message||"Erreur API GLM-5");
@@ -832,7 +832,7 @@ const AddMisModal=({open,onClose,onAdd,companies})=>{
     if(!jt.trim())return;setParsing(true);
     try{
       const prompt=`Analyse cette fiche de poste. Réponds UNIQUEMENT en JSON valide sans backticks: {"title":"","company":"","salary":"XXK€","fee":"18%","location":"","contract":"CDI/CDD/Freelance","experience":"","skills":[""],"description":"","requirements":[""],"remote":""}\n\nFiche:\n${jt}`;
-      const res=await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer cccc35d995874983b73e8728ec471575.ciArEcWoCrfpeWro"},body:JSON.stringify({model:"glm-5",messages:[{role:"user",content:prompt}],max_tokens:2048})});
+      const res=await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer cccc35d995874983b73e8728ec471575.ciArEcWoCrfpeWro"},body:JSON.stringify({model:"glm-5",messages:[{role:"user",content:prompt}],max_tokens:16384})});
       const data=await res.json();const raw=(data.choices?.[0]?.message?.content||"");
       const r=JSON.parse(raw.replace(/```json|```/g,"").trim());
       setF({title:r.title||"",company:r.company||"",salary:r.salary||"",fee:r.fee||"18%",location:r.location||"",contract:r.contract||"CDI",experience:r.experience||"",skills:r.skills||[],description:r.description||"",requirements:r.requirements||[],remote:r.remote||"",deadline:new Date(Date.now()+90*864e5).toISOString().slice(0,10)});
@@ -906,7 +906,7 @@ const GenMsgModal=({open,onClose,type:tp,context:ctx})=>{
       confirm:`Rédige un email de confirmation de RDV entretien en français pour ${ctx.name}. Mission: ${ctx.mission}. Ton: cordial et factuel. Max 80 mots.`
     };
     try{
-      const res=await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer cccc35d995874983b73e8728ec471575.ciArEcWoCrfpeWro"},body:JSON.stringify({model:"glm-5",messages:[{role:"user",content:prompts[tp]||prompts.approach}],max_tokens:2048})});
+      const res=await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer cccc35d995874983b73e8728ec471575.ciArEcWoCrfpeWro"},body:JSON.stringify({model:"glm-5",messages:[{role:"user",content:prompts[tp]||prompts.approach}],max_tokens:16384})});
       const data=await res.json();setMsg(data.choices?.[0]?.message?.content||"");
     }catch(e){setMsg("Erreur lors de la génération.");}
     setLoading(false);
