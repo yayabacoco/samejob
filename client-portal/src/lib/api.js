@@ -72,7 +72,7 @@ export async function getMissionsWithProfiles(companyId) {
           cm.candidates?.score_dispo ?? 5,
         ],
         skills: cm.candidates?.skills || [],
-        summary: cm.candidates?.client_summary || cm.candidates?.notes || '',
+        summary: cm.candidates?.ai_summary || cm.candidates?.client_summary || cm.candidates?.notes || '',
         experience: cm.candidates?.experience || '',
         cr: cm.candidates?.interview_report || '',
         interviewDate: cm.interview_date || '',
