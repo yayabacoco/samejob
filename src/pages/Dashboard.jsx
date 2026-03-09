@@ -1052,6 +1052,7 @@ export default function Dashboard({ session }) {
   const [showSearch,setShowSearch]=useState(false);
   const [showNotifs,setShowNotifs]=useState(false);
   const [allMsgs,setAllMsgs]=useState([]);
+  const [unreadMsgs,setUnreadMsgs]=useState(0);
 
   const userId = session?.user?.id;
   const userEmail = session?.user?.email || 'Vous';
@@ -1071,6 +1072,7 @@ export default function Dashboard({ session }) {
           const m=payload.new;
           setAllMsgs(prev=>[...prev,m]);
           if(m.is_from_client){
+            setUnreadMsgs(prev=>prev+1);
             showToast('Nouveau message client reçu','ok');
           }
         })
@@ -1193,7 +1195,7 @@ export default function Dashboard({ session }) {
     if(kind==="company"){setPage("crm");setSelComp(id);setSelCand(null);setSelMis(null);}
   };
 
-  const navTo=k=>{setPage(k);setSelCand(null);setSelComp(null);setSelMis(null);};
+  const navTo=k=>{setPage(k);setSelCand(null);setSelComp(null);setSelMis(null);if(k==="messages")setUnreadMsgs(0);};
 
   // ── RENDER ────────────────────────────────
   const render=()=>{
@@ -1234,10 +1236,14 @@ export default function Dashboard({ session }) {
       </div>
       <nav style={{flex:1,padding:side?"0 8px":"0 6px"}}>
         {NAV.map(n=>{
-          const clientMsgCount=n.k==="messages"?companies.reduce((acc,c)=>{return acc+(c.history||[]).filter(h=>h.isFromClient).length;},0):0;
-          return <button key={n.k} onClick={()=>navTo(n.k)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:side?"9px 12px":"9px 0",background:page===n.k?C.acc+"18":"transparent",color:page===n.k?C.acc:C.t3,border:"none",borderRadius:9,cursor:"pointer",fontSize:13,fontWeight:page===n.k?600:400,marginBottom:3,justifyContent:side?"flex-start":"center",transition:"all .15s"}}>
-            <Ic n={n.i} s={17} c={page===n.k?C.acc:C.t3}/>{side&&n.l}
-            {side&&clientMsgCount>0&&<span style={{marginLeft:"auto",background:C.acc,color:C.wh,fontSize:9,fontWeight:700,borderRadius:10,padding:"2px 7px"}}>{clientMsgCount}</span>}
+          const badge=n.k==="messages"&&unreadMsgs>0;
+          return <button key={n.k} onClick={()=>navTo(n.k)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",padding:side?"9px 12px":"9px 0",background:page===n.k?C.acc+"18":"transparent",color:page===n.k?C.acc:C.t3,border:"none",borderRadius:9,cursor:"pointer",fontSize:13,fontWeight:page===n.k?600:400,marginBottom:3,justifyContent:side?"flex-start":"center",transition:"all .15s",position:"relative"}}>
+            <div style={{position:"relative",flexShrink:0}}>
+              <Ic n={n.i} s={17} c={page===n.k?C.acc:C.t3}/>
+              {badge&&!side&&<span style={{position:"absolute",top:-4,right:-4,background:C.err,width:8,height:8,borderRadius:"50%",display:"block"}}/>}
+            </div>
+            {side&&n.l}
+            {side&&badge&&<span style={{marginLeft:"auto",background:C.err,color:C.wh,fontSize:9,fontWeight:700,borderRadius:10,padding:"2px 7px"}}>{unreadMsgs}</span>}
           </button>;
         })}
       </nav>
