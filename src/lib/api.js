@@ -317,6 +317,45 @@ export async function createCompany(data) {
   return comp
 }
 
+// ── CLIENT PORTAL ACCESS ─────────────────────
+
+const SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY
+const SUPABASE_URL_BASE = 'https://gbgbtbzrcsqmyckrcehe.supabase.co'
+
+export async function createClientAccess(companyId, email) {
+  const password = Math.random().toString(36).slice(-8) + 'A1!'
+
+  // 1. Créer le compte auth via Admin API
+  const res = await fetch(`${SUPABASE_URL_BASE}/auth/v1/admin/users`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SERVICE_KEY}`,
+      'apikey': SERVICE_KEY,
+    },
+    body: JSON.stringify({ email, password, email_confirm: true }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.msg || data.message || 'Erreur création compte')
+
+  // 2. Lier le compte à l'entreprise
+  const { error } = await supabase
+    .from('companies')
+    .update({ portal_user_id: data.id })
+    .eq('id', companyId)
+  if (error) throw error
+
+  return { email, password, userId: data.id }
+}
+
+export async function revokeClientAccess(companyId) {
+  const { error } = await supabase
+    .from('companies')
+    .update({ portal_user_id: null })
+    .eq('id', companyId)
+  if (error) throw error
+}
+
 export async function updateCandidateInfo(id, data) {
   const { error } = await supabase
     .from('candidates')

@@ -6,6 +6,7 @@ import {
   addCandidateInteraction, addCompanyInteraction,
   createCandidate, createCompany, createMission,
   updateCandidateInfo,
+  createClientAccess, revokeClientAccess,
   assignMissionToCandidate, unassignMissionFromCandidate,
   STAGE_TO_DB, COMPANY_STATUS_TO_DB, MISSION_STATUS_TO_DB,
 } from '../lib/api'
@@ -188,15 +189,40 @@ const CrmList=({S,onSel})=>{
 };
 
 // ── CRM DETAIL ───────────────────────────────
-const CrmDetail=({company:co,S,onBack,onAddHist,onMsg})=>{
+const CrmDetail=({company:co,S,onBack,onAddHist,onMsg,onToast})=>{
   const [tab,setTab]=useState("Historique");
   const [showAdd,setShowAdd]=useState(false);
   const [hType,setHType]=useState("call");
   const [hText,setHText]=useState("");
+  const [portalEmail,setPortalEmail]=useState(co.contacts?.[0]?.email||"");
+  const [portalCreating,setPortalCreating]=useState(false);
+  const [portalCreds,setPortalCreds]=useState(null);
+  const [hasAccess,setHasAccess]=useState(!!co.portal_user_id);
   const mis=S.missions.filter(m=>m.company===co.name);
   const mStages=["Premier contact","Brief","Proposition envoyée","Mandat signé","Mission active"];
   const msi=mStages.indexOf(co.mandatStage);
   const addH=()=>{if(!hText.trim())return;onAddHist(co.id,{date:today(),type:hType,text:hText,by:"Vous"});setHText("");setShowAdd(false);};
+
+  const doCreateAccess=async()=>{
+    if(!portalEmail.trim())return;
+    setPortalCreating(true);
+    try{
+      const creds=await createClientAccess(co.id,portalEmail);
+      setPortalCreds(creds);
+      setHasAccess(true);
+      onToast&&onToast("Accès client créé !");
+    }catch(e){
+      onToast&&onToast(e.message||"Erreur création accès","err");
+    }
+    setPortalCreating(false);
+  };
+
+  const doRevoke=async()=>{
+    await revokeClientAccess(co.id);
+    setHasAccess(false);
+    setPortalCreds(null);
+    onToast&&onToast("Accès révoqué");
+  };
 
   return <div>
     <Btn onClick={onBack} style={{marginBottom:14}}>← Retour</Btn>
@@ -223,7 +249,42 @@ const CrmDetail=({company:co,S,onBack,onAddHist,onMsg})=>{
         <div style={{background:C.card2,borderRadius:10,padding:12,flex:1}}><div style={{fontSize:10,color:C.t3,marginBottom:3}}>MISSIONS</div><div style={{fontSize:22,fontWeight:700,color:C.acc}}>{mis.length}</div></div>
         <div style={{background:C.card2,borderRadius:10,padding:12,flex:2}}><div style={{fontSize:10,color:C.t3,marginBottom:3}}>NOTES</div><div style={{fontSize:12,color:C.t2,lineHeight:1.5}}>{co.notes}</div></div>
       </div>
-      <Tabs tabs={["Historique","Missions"]} active={tab} onChange={setTab}/>
+      {/* ── PORTAIL CLIENT ── */}
+      <div style={{borderTop:`1px solid ${C.border}`,paddingTop:16,marginTop:4}}>
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+          <Ic n="key" s={14} c={C.acc}/>
+          <span style={{fontSize:13,fontWeight:600,color:C.t1}}>Accès portail client</span>
+          {hasAccess&&<span style={{background:C.ok+"18",color:C.ok,fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:10}}>Actif</span>}
+        </div>
+
+        {!hasAccess&&!portalCreds&&<div style={{display:"flex",gap:8,alignItems:"flex-end",flexWrap:"wrap"}}>
+          <Inp label="Email du contact client" value={portalEmail} onChange={e=>setPortalEmail(e.target.value)} placeholder="contact@entreprise.com" style={{flex:1,minWidth:220}}/>
+          <Btn pr sm onClick={doCreateAccess} dis={portalCreating||!portalEmail.trim()} style={{marginBottom:1}}>
+            <Ic n="userplus" s={13} c={C.wh}/> {portalCreating?"Création...":"Créer l'accès"}
+          </Btn>
+        </div>}
+
+        {portalCreds&&<div style={{background:C.ok+"0d",border:`1px solid ${C.ok}33`,borderRadius:10,padding:14}}>
+          <div style={{fontSize:12,fontWeight:600,color:C.ok,marginBottom:8,display:"flex",alignItems:"center",gap:6}}><Ic n="check" s={13} c={C.ok}/> Accès créé — à envoyer au client</div>
+          <div style={{display:"grid",gridTemplateColumns:"auto 1fr",gap:"4px 10px",fontSize:12,marginBottom:10}}>
+            <span style={{color:C.t3}}>URL</span><span style={{color:C.t1,fontWeight:600}}>samejob-client.vercel.app</span>
+            <span style={{color:C.t3}}>Email</span><span style={{color:C.t1}}>{portalCreds.email}</span>
+            <span style={{color:C.t3}}>Mot de passe</span><span style={{color:C.t1,fontWeight:700,letterSpacing:1}}>{portalCreds.password}</span>
+          </div>
+          <Btn sm onClick={()=>{navigator.clipboard.writeText(`Portail Same Job\nURL : https://samejob-client.vercel.app\nEmail : ${portalCreds.email}\nMot de passe : ${portalCreds.password}`);onToast&&onToast("Copié !");}}>
+            <Ic n="copy" s={12}/> Copier les identifiants
+          </Btn>
+        </div>}
+
+        {hasAccess&&!portalCreds&&<div style={{display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:12,color:C.t2}}>Portail actif pour {portalEmail||co.contacts?.[0]?.email||"ce client"}</span>
+          <Btn sm onClick={doRevoke} style={{color:C.err,border:`1px solid ${C.err}33`}}>Révoquer</Btn>
+        </div>}
+      </div>
+
+      <div style={{borderTop:`1px solid ${C.border}`,paddingTop:16,marginTop:16}}>
+        <Tabs tabs={["Historique","Missions"]} active={tab} onChange={setTab}/>
+      </div>
     </Bx>
 
     {tab==="Historique"&&<Bx style={{padding:20}}>
@@ -935,7 +996,7 @@ export default function Dashboard({ session }) {
   // ── RENDER ────────────────────────────────
   const render=()=>{
     if(page==="pipeline"&&selCand){const c=candidates.find(x=>x.id===selCand);if(c)return <CandDetail cand={c} S={S} onBack={()=>setSelCand(null)} onUpdate={updateCand} onAddHist={addCandHist} onAssign={assignCandMission} toast={showToast}/>;}
-    if(page==="crm"&&selComp){const c=companies.find(x=>x.id===selComp);if(c)return <CrmDetail company={c} S={S} onBack={()=>setSelComp(null)} onAddHist={addCompHist} onMsg={(tp,ctx)=>setMsgModal({type:tp,ctx})}/>;}
+    if(page==="crm"&&selComp){const c=companies.find(x=>x.id===selComp);if(c)return <CrmDetail company={c} S={S} onBack={()=>setSelComp(null)} onAddHist={addCompHist} onMsg={(tp,ctx)=>setMsgModal({type:tp,ctx})} onToast={showToast}/>;}
     if(page==="missions"&&selMis){const m=missions.find(x=>x.id===selMis);if(m)return <MissionDetail mission={m} S={S} onBack={()=>setSelMis(null)} onUpdateCand={updateCand}/>;}
     switch(page){
       case "myday":return <MyDay S={S} goTo={goTo}/>;
