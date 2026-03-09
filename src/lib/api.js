@@ -56,7 +56,7 @@ export async function getCompanies(currentUserId) {
   ] = await Promise.all([
     supabase.from('companies').select('*').order('created_at', { ascending: false }),
     supabase.from('company_contacts').select('*'),
-    supabase.from('interactions').select('*').not('company_id', 'is', null).order('created_at', { ascending: false }),
+    supabase.from('interactions').select('*').eq('entity_type', 'company').order('created_at', { ascending: false }),
   ])
 
   if (error) throw error
@@ -78,12 +78,12 @@ export async function getCompanies(currentUserId) {
         phone: ct.phone || '',
       })),
     history: (interactions || [])
-      .filter(i => i.company_id === c.id)
+      .filter(i => i.entity_id === c.id)
       .map(i => ({
         id: i.id,
         date: (i.created_at || '').slice(0, 10),
         type: i.type || 'note',
-        text: i.content || i.notes || i.text || '',
+        text: i.text || '',
         context: i.context_label || null,
         isFromClient: i.is_from_client || false,
         by: i.is_from_client ? 'Client' : 'Vous',
@@ -105,7 +105,7 @@ export async function getCandidates(currentUserId) {
     supabase.from('candidates').select('*').order('created_at', { ascending: false }),
     supabase.from('candidate_missions').select('*'),
     supabase.from('missions').select('id, title, company_id'),
-    supabase.from('interactions').select('*').not('candidate_id', 'is', null).order('created_at', { ascending: false }),
+    supabase.from('interactions').select('*').eq('entity_type', 'candidate').order('created_at', { ascending: false }),
     supabase.from('companies').select('id, name'),
     getUsers(),
   ])
@@ -148,12 +148,12 @@ export async function getCandidates(currentUserId) {
       avatar: initials(c.full_name),
       consultant: resolveUserName(c.consultant_id, users, currentUserId),
       history: (interactions || [])
-        .filter(i => i.candidate_id === c.id)
+        .filter(i => i.entity_id === c.id)
         .map(i => ({
           date: (i.created_at || '').slice(0, 10),
           type: i.type || 'note',
-          text: i.content || i.notes || i.text || '',
-          by: resolveUserName(i.consultant_id, users, currentUserId),
+          text: i.text || '',
+          by: resolveUserName(i.author_id, users, currentUserId),
         })),
       docs: [],
       cvText: c.cv_text || '',
@@ -248,31 +248,42 @@ export async function updateCandidateScores(id, scores) {
 
 export async function addCandidateInteraction(candidateId, { type, text }) {
   const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase.from('users').select('organization_id').eq('id', user?.id).single()
   const { error } = await supabase.from('interactions').insert({
-    candidate_id: candidateId,
+    entity_type: 'candidate',
+    entity_id: candidateId,
     type,
-    content: text,
-    consultant_id: user?.id,
+    text,
+    author_id: user?.id,
+    organization_id: profile?.organization_id,
   })
   if (error) throw error
 }
 
 export async function addCompanyInteraction(companyId, { type, text }) {
   const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase.from('users').select('organization_id').eq('id', user?.id).single()
   const { error } = await supabase.from('interactions').insert({
-    company_id: companyId,
+    entity_type: 'company',
+    entity_id: companyId,
     type,
-    content: text,
-    consultant_id: user?.id,
+    text,
+    author_id: user?.id,
+    organization_id: profile?.organization_id,
   })
   if (error) throw error
 }
 
 export async function sendMessageToClient(companyId, text, contextLabel) {
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase.from('users').select('organization_id').eq('id', user?.id).single()
   const { error } = await supabase.from('interactions').insert({
-    company_id: companyId,
+    entity_type: 'company',
+    entity_id: companyId,
     type: 'message',
-    content: text,
+    text,
+    author_id: user?.id,
+    organization_id: profile?.organization_id,
     is_from_client: false,
     context_label: contextLabel || null,
   })

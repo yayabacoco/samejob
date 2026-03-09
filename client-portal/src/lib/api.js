@@ -146,23 +146,26 @@ export async function getMessages(companyId) {
   const { data, error } = await supabase
     .from('interactions')
     .select('*')
-    .eq('company_id', companyId)
+    .eq('entity_type', 'company')
+    .eq('entity_id', companyId)
+    .eq('type', 'message')
     .order('created_at', { ascending: true })
   if (error) return []
   return (data || []).map(i => ({
     id: i.id,
     from: i.is_from_client ? 'client' : 'Same Job',
     date: (i.created_at || '').slice(0, 10),
-    text: i.content || '',
+    text: i.text || '',
     context: i.context_label || null,
   }))
 }
 
 export async function sendMessage(companyId, text, contextLabel) {
   const { error } = await supabase.from('interactions').insert({
-    company_id: companyId,
+    entity_type: 'company',
+    entity_id: companyId,
     type: 'message',
-    content: text,
+    text,
     is_from_client: true,
     context_label: contextLabel || null,
   })
