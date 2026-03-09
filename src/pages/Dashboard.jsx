@@ -1081,20 +1081,27 @@ export default function Dashboard({ session }) {
   async function loadData() {
     setLoading(true);
     try {
-      const [comps, cands, mis, rems, msgsRes] = await Promise.all([
+      const [comps, cands, mis, rems] = await Promise.all([
         getCompanies(userId).catch(()=>null),
         getCandidates(userId).catch(()=>null),
         getMissions(userId).catch(()=>null),
         getReminders().catch(()=>[]),
-        supabase.from('company_messages').select('*').order('created_at',{ascending:true}).catch(()=>({data:[]})),
       ]);
       setCompanies(comps || []);
       setCandidates(cands || []);
       setMissions(mis || []);
       setReminders(rems);
-      setAllMsgs(msgsRes?.data || []);
     } catch(e) {
       console.error("Erreur chargement données:", e);
+    }
+    try {
+      const { data: msgsData } = await supabase
+        .from('company_messages')
+        .select('*')
+        .order('created_at', { ascending: true });
+      setAllMsgs(msgsData || []);
+    } catch(e) {
+      console.error("Erreur chargement messages:", e);
     }
     setLoading(false);
   }
