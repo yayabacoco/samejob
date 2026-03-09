@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from '../lib/supabase'
 import {
   getCompanies, getCandidates, getMissions, getReminders,
@@ -961,6 +961,23 @@ export default function Dashboard({ session }) {
   // ── LOAD DATA FROM SUPABASE ───────────────
   useEffect(()=>{
     loadData();
+  },[]);
+
+  // ── REALTIME SUBSCRIPTIONS ────────────────
+  useEffect(()=>{
+    const channel=supabase.channel('dashboard-realtime')
+      .on('postgres_changes',{event:'*',schema:'public',table:'candidate_missions'},
+        ()=>getCandidates(userId).then(c=>setCandidates(c||[])).catch(console.error))
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'interactions'},
+        (payload)=>{
+          const i=payload.new;
+          if(i.is_from_client){
+            showToast('Nouveau message client reçu','ok');
+            getCompanies(userId).then(c=>setCompanies(c||[])).catch(console.error);
+          }
+        })
+      .subscribe();
+    return()=>supabase.removeChannel(channel);
   },[]);
 
   async function loadData() {
