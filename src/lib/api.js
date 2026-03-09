@@ -415,7 +415,7 @@ export async function updateCandidateCvSummary(id, { cvText, aiSummary }) {
 export async function assignMissionToCandidate(candidateId, missionId) {
   const { error } = await supabase
     .from('candidate_missions')
-    .insert({ candidate_id: candidateId, mission_id: missionId })
+    .upsert({ candidate_id: candidateId, mission_id: missionId }, { onConflict: 'candidate_id,mission_id', ignoreDuplicates: true })
   if (error) throw error
 }
 
