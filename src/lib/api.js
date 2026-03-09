@@ -270,18 +270,29 @@ export async function addCompanyInteraction(companyId, { type, text }) {
   if (error) throw error
 }
 
-export async function sendMessageToClient(companyId, text, contextLabel) {
-  const { data: { user } } = await supabase.auth.getUser()
-  const { error } = await supabase.from('interactions').insert({
-    entity_type: 'company',
-    entity_id: companyId,
-    type: 'message',
+export async function sendMessageToClient(companyId, text) {
+  const { error } = await supabase.from('company_messages').insert({
+    company_id: companyId,
     text,
-    author_id: user?.id,
     is_from_client: false,
-    context_label: contextLabel || null,
   })
   if (error) throw error
+}
+
+export async function getCompanyMessages(companyId) {
+  const { data, error } = await supabase
+    .from('company_messages')
+    .select('*')
+    .eq('company_id', companyId)
+    .order('created_at', { ascending: true })
+  if (error) return []
+  return (data || []).map(m => ({
+    id: m.id,
+    text: m.text,
+    isFromClient: m.is_from_client,
+    date: (m.created_at || '').slice(0, 10),
+    by: m.is_from_client ? 'Client' : 'Vous',
+  }))
 }
 
 // ── CREATE MUTATIONS ─────────────────────────

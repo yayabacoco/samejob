@@ -144,31 +144,25 @@ export async function validateProfile(cmId) {
 
 export async function getMessages(companyId) {
   const { data, error } = await supabase
-    .from('interactions')
+    .from('company_messages')
     .select('*')
-    .eq('entity_type', 'company')
-    .eq('entity_id', companyId)
-    .eq('type', 'message')
+    .eq('company_id', companyId)
     .order('created_at', { ascending: true })
   if (error) return []
-  return (data || []).map(i => ({
-    id: i.id,
-    from: i.is_from_client ? 'client' : 'Same Job',
-    date: (i.created_at || '').slice(0, 10),
-    text: i.text || '',
-    context: i.context_label || null,
+  return (data || []).map(m => ({
+    id: m.id,
+    from: m.is_from_client ? 'client' : 'Same Job',
+    date: (m.created_at || '').slice(0, 10),
+    text: m.text || '',
+    context: null,
   }))
 }
 
-export async function sendMessage(companyId, organizationId, text, contextLabel) {
-  const { error } = await supabase.from('interactions').insert({
-    entity_type: 'company',
-    entity_id: companyId,
-    organization_id: organizationId,
-    type: 'message',
+export async function sendMessage(companyId, text) {
+  const { error } = await supabase.from('company_messages').insert({
+    company_id: companyId,
     text,
     is_from_client: true,
-    context_label: contextLabel || null,
   })
   if (error) throw error
 }

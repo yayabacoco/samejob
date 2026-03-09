@@ -155,17 +155,17 @@ export default function Portal({ session }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'missions',
         filter: `company_id=eq.${compId}` },
         () => refreshMissions(compId))
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'interactions',
-        filter: `entity_id=eq.${compId}` },
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'company_messages',
+        filter: `company_id=eq.${compId}` },
         (payload) => {
-          const i = payload.new;
-          if (!i.is_from_client && i.type === 'message') {
+          const m = payload.new;
+          if (!m.is_from_client) {
             setMessages(prev => [...prev, {
-              id: i.id,
+              id: m.id,
               from: 'Same Job',
-              date: (i.created_at || '').slice(0, 10),
-              text: i.text || '',
-              context: i.context_label || null,
+              date: (m.created_at || '').slice(0, 10),
+              text: m.text || '',
+              context: null,
             }]);
             showToast('Nouveau message de votre chasseur', C.acc);
           }
@@ -236,12 +236,12 @@ export default function Portal({ session }) {
     })));
   };
 
-  const handleSend = async (text, contextLabel) => {
+  const handleSend = async (text) => {
     if (!company || !text.trim()) return;
-    const optimistic = { id: Date.now(), from: 'client', date: new Date().toISOString().slice(0, 10), text, context: contextLabel };
+    const optimistic = { id: Date.now(), from: 'client', date: new Date().toISOString().slice(0, 10), text, context: null };
     setMessages(prev => [...prev, optimistic]);
     try {
-      await sendMessage(company.id, company.organization_id, text, contextLabel);
+      await sendMessage(company.id, text);
     } catch (e) {
       console.error('sendMessage error:', e);
       setMessages(prev => prev.filter(m => m.id !== optimistic.id));
@@ -350,8 +350,8 @@ export default function Portal({ session }) {
       <Card style={{ padding: "18px 22px" }}>
         <h3 style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 600, color: C.t1 }}>Message à votre chasseur sur {p.alias}</h3>
         <div style={{ display: "flex", gap: 8 }}>
-          <input value={msgTxt} onChange={e => setMsgTxt(e.target.value)} placeholder="Posez une question..." onKeyDown={e => { if (e.key === "Enter" && msgTxt.trim()) { handleSend(msgTxt, p.alias); setMsgTxt(""); showToast("Message envoyé"); } }} style={{ flex: 1, ...IS }} />
-          <Btn pr sm onClick={() => { if (msgTxt.trim()) { handleSend(msgTxt, p.alias); setMsgTxt(""); showToast("Message envoyé"); } }} dis={!msgTxt.trim()}><Ic n="send" s={14} c={C.wh} /></Btn>
+          <input value={msgTxt} onChange={e => setMsgTxt(e.target.value)} placeholder="Posez une question..." onKeyDown={e => { if (e.key === "Enter" && msgTxt.trim()) { handleSend(msgTxt); setMsgTxt(""); showToast("Message envoyé"); } }} style={{ flex: 1, ...IS }} />
+          <Btn pr sm onClick={() => { if (msgTxt.trim()) { handleSend(msgTxt); setMsgTxt(""); showToast("Message envoyé"); } }} dis={!msgTxt.trim()}><Ic n="send" s={14} c={C.wh} /></Btn>
         </div>
       </Card>
     </div>;
@@ -423,8 +423,8 @@ export default function Portal({ session }) {
         {flt.length === 0 && <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: C.t3, fontSize: 12 }}>Aucun message</div>}
       </div>
       <div style={{ display: "flex", gap: 8 }}>
-        <input value={txt} onChange={e => setTxt(e.target.value)} placeholder="Écrivez à votre chasseur..." onKeyDown={e => { if (e.key === "Enter" && txt.trim()) { handleSend(txt, ctx === "Général" ? null : ctx); setTxt(""); } }} style={{ flex: 1, ...IS }} />
-        <Btn pr onClick={() => { if (txt.trim()) { handleSend(txt, ctx === "Général" ? null : ctx); setTxt(""); } }} dis={!txt.trim()}><Ic n="send" s={15} c={C.wh} /></Btn>
+        <input value={txt} onChange={e => setTxt(e.target.value)} placeholder="Écrivez à votre chasseur..." onKeyDown={e => { if (e.key === "Enter" && txt.trim()) { handleSend(txt); setTxt(""); } }} style={{ flex: 1, ...IS }} />
+        <Btn pr onClick={() => { if (txt.trim()) { handleSend(txt); setTxt(""); } }} dis={!txt.trim()}><Ic n="send" s={15} c={C.wh} /></Btn>
       </div>
     </Card>;
   };

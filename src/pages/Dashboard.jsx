@@ -8,7 +8,7 @@ import {
   updateCandidateInfo, updateCandidateCvSummary,
   createClientAccess, revokeClientAccess,
   assignMissionToCandidate, unassignMissionFromCandidate,
-  sendMessageToClient,
+  sendMessageToClient, getCompanyMessages,
   STAGE_TO_DB, COMPANY_STATUS_TO_DB, MISSION_STATUS_TO_DB,
 } from '../lib/api'
 
@@ -224,9 +224,10 @@ const CrmDetail=({company:co,S,onBack,onAddHist,onMsg,onToast})=>{
   const [hType,setHType]=useState("call");
   const [hText,setHText]=useState("");
   const [msgText,setMsgText]=useState("");
-  const [msgs,setMsgs]=useState((co.history||[]).filter(h=>h.isFromClient||h.type==="message"));
+  const [msgs,setMsgs]=useState([]);
   const msgEndRef=useRef(null);
   const unread=msgs.filter(m=>m.isFromClient).length;
+  useEffect(()=>{getCompanyMessages(co.id).then(setMsgs);},[co.id]);
   const [portalEmail,setPortalEmail]=useState(co.contacts?.[0]?.email||"");
   const [portalCreating,setPortalCreating]=useState(false);
   const [portalCreds,setPortalCreds]=useState(null);
@@ -1049,10 +1050,10 @@ export default function Dashboard({ session }) {
     const channel=supabase.channel('dashboard-realtime')
       .on('postgres_changes',{event:'*',schema:'public',table:'candidate_missions'},
         ()=>getCandidates(userId).then(c=>setCandidates(c||[])).catch(console.error))
-      .on('postgres_changes',{event:'INSERT',schema:'public',table:'interactions'},
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'company_messages'},
         (payload)=>{
-          const i=payload.new;
-          if(i.is_from_client){
+          const m=payload.new;
+          if(m.is_from_client){
             showToast('Nouveau message client reçu','ok');
             getCompanies(userId).then(c=>setCompanies(c||[])).catch(console.error);
           }
