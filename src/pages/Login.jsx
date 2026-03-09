@@ -6,18 +6,80 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [resetMode, setResetMode] = useState(false)
+  const [resetDone, setResetDone] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
     setLoading(true)
-
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (error) {
-      setError(error.message)
-    }
+    if (error) setError(error.message)
     setLoading(false)
+  }
+
+  async function handleReset(e) {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/login',
+    })
+    if (error) setError(error.message)
+    else setResetDone(true)
+    setLoading(false)
+  }
+
+  if (resetMode) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.card}>
+          <div style={styles.logo}>
+            <span style={styles.logoIcon}>🎯</span>
+            <h1 style={styles.title}>Same Job</h1>
+            <p style={styles.subtitle}>Mot de passe oublié</p>
+          </div>
+
+          {resetDone ? (
+            <div style={{ textAlign: 'center' }}>
+              <p style={{ color: '#a09cc0', fontSize: 14, marginBottom: '1.5rem', lineHeight: 1.6 }}>
+                Un lien de réinitialisation a été envoyé à <strong style={{ color: '#f1f0ff' }}>{email}</strong>.
+              </p>
+              <button onClick={() => { setResetMode(false); setResetDone(false) }} style={styles.button}>
+                Retour à la connexion
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleReset} style={styles.form}>
+              <div style={styles.field}>
+                <label style={styles.label}>Votre email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="votre@email.com"
+                  required
+                  style={styles.input}
+                  onFocus={e => e.target.style.borderColor = '#7c3aed'}
+                  onBlur={e => e.target.style.borderColor = '#2e2b5a'}
+                />
+              </div>
+
+              {error && <div style={styles.error}>{error}</div>}
+
+              <button type="submit" disabled={loading} style={{ ...styles.button, opacity: loading ? 0.7 : 1 }}>
+                {loading ? 'Envoi...' : 'Envoyer le lien'}
+              </button>
+
+              <button type="button" onClick={() => setResetMode(false)}
+                style={{ background: 'none', border: 'none', color: '#a09cc0', fontSize: 13, cursor: 'pointer', textAlign: 'center', marginTop: 4 }}>
+                ← Retour
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -58,11 +120,7 @@ export default function Login() {
             />
           </div>
 
-          {error && (
-            <div style={styles.error}>
-              {error}
-            </div>
-          )}
+          {error && <div style={styles.error}>{error}</div>}
 
           <button type="submit" disabled={loading} style={{
             ...styles.button,
@@ -72,6 +130,13 @@ export default function Login() {
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
+
+        <p style={{ textAlign: 'center', marginTop: '1.25rem', fontSize: 13 }}>
+          <button onClick={() => setResetMode(true)}
+            style={{ background: 'none', border: 'none', color: '#a09cc0', cursor: 'pointer', fontSize: 13, textDecoration: 'underline' }}>
+            Mot de passe oublié ?
+          </button>
+        </p>
       </div>
     </div>
   )
