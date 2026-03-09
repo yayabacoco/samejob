@@ -100,21 +100,39 @@ const SlotPicker=({slots,onConfirm,proposedDate})=>{
 };
 
 // ── CV UPLOAD & FORMAT ───────────────────────
+const PARSING_STEPS=["Lecture du CV...","Suppression des données personnelles...","Anonymisation de l'entreprise actuelle...","Formatage des expériences...","Finalisation du document..."];
+
 const CvUpload=({mission,candidate,onSaved})=>{
   const [step,setStep]=useState(candidate?.cv_text?"review":"upload");
   const [rawText,setRawText]=useState(candidate?.cv_text||"");
   const [parsed,setParsed]=useState(candidate?.ai_summary?tryParse(candidate.ai_summary):null);
   const [editing,setEditing]=useState(false);
   const [saving,setSaving]=useState(false);
+  const [parseMsg,setParseMsg]=useState(0);
 
   function tryParse(s){try{const j=JSON.parse(s);return j;}catch{return {summary:s,experience:[],skills:[],education:[],languages:[]};}}
+
+  // Warn before leaving while parsing
+  useEffect(()=>{
+    if(step!=="parsing")return;
+    const handler=(e)=>{e.preventDefault();e.returnValue="";};
+    window.addEventListener("beforeunload",handler);
+    return()=>window.removeEventListener("beforeunload",handler);
+  },[step]);
+
+  // Cycle through step messages during parsing
+  useEffect(()=>{
+    if(step!=="parsing")return;
+    setParseMsg(0);
+    const iv=setInterval(()=>setParseMsg(m=>(m+1<PARSING_STEPS.length?m+1:m)),4000);
+    return()=>clearInterval(iv);
+  },[step]);
 
   const handlePaste=async()=>{
     if(!rawText.trim())return;
     setStep("parsing");
     const result=await parseCv(rawText);
     if(result){
-      // result is plain markdown text — store in summary field
       setParsed({summary:result,experience:[],skills:[],education:[],languages:[]});
       setStep("review");
     }else{
@@ -139,9 +157,17 @@ const CvUpload=({mission,candidate,onSaved})=>{
         <Btn pr dis={!rawText.trim()} onClick={handlePaste}><Ic n="spark" s={14} c={C.wh}/> Formater avec l'IA</Btn>
       </div>
     </div>}
-    {step==="parsing"&&<div style={{padding:40,textAlign:"center"}}>
-      <div style={{display:"inline-block",width:24,height:24,border:`3px solid ${C.acc}33`,borderTopColor:C.acc,borderRadius:"50%",animation:"spin .8s linear infinite",marginBottom:12}}/>
-      <div style={{fontSize:14,fontWeight:600,color:C.acc}}>Analyse en cours...</div>
+    {step==="parsing"&&<div style={{padding:"36px 20px",textAlign:"center"}}>
+      <div style={{position:"relative",width:56,height:56,margin:"0 auto 20px"}}>
+        <div style={{position:"absolute",inset:0,borderRadius:"50%",border:`3px solid ${C.acc}22`}}/>
+        <div style={{position:"absolute",inset:0,borderRadius:"50%",border:`3px solid transparent`,borderTopColor:C.acc,animation:"spin .9s linear infinite"}}/>
+        <div style={{position:"absolute",inset:8,borderRadius:"50%",border:`2px solid transparent`,borderTopColor:C.acc3,animation:"spin 1.4s linear infinite reverse"}}/>
+      </div>
+      <div style={{fontSize:15,fontWeight:700,color:C.t1,marginBottom:8}}>Traitement IA en cours</div>
+      <div style={{fontSize:13,color:C.acc,fontWeight:500,minHeight:20,transition:"opacity .3s"}}>{PARSING_STEPS[parseMsg]}</div>
+      <div style={{marginTop:20,background:C.card2,borderRadius:10,padding:"10px 16px",display:"inline-flex",alignItems:"center",gap:8,fontSize:12,color:C.warn}}>
+        <span style={{fontSize:16}}>⚠️</span> Ne fermez pas cette page — le traitement est en cours
+      </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>}
     {step==="review"&&parsed&&<div>
