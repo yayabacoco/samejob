@@ -80,10 +80,13 @@ export async function getCompanies(currentUserId) {
     history: (interactions || [])
       .filter(i => i.company_id === c.id)
       .map(i => ({
+        id: i.id,
         date: (i.created_at || '').slice(0, 10),
         type: i.type || 'note',
         text: i.content || i.notes || i.text || '',
-        by: 'Vous',
+        context: i.context_label || null,
+        isFromClient: i.is_from_client || false,
+        by: i.is_from_client ? 'Client' : 'Vous',
       })),
   }))
 }
@@ -261,6 +264,17 @@ export async function addCompanyInteraction(companyId, { type, text }) {
     type,
     content: text,
     consultant_id: user?.id,
+  })
+  if (error) throw error
+}
+
+export async function sendMessageToClient(companyId, text, contextLabel) {
+  const { error } = await supabase.from('interactions').insert({
+    company_id: companyId,
+    type: 'message',
+    content: text,
+    is_from_client: false,
+    context_label: contextLabel || null,
   })
   if (error) throw error
 }

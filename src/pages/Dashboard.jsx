@@ -8,6 +8,7 @@ import {
   updateCandidateInfo, updateCandidateCvSummary,
   createClientAccess, revokeClientAccess,
   assignMissionToCandidate, unassignMissionFromCandidate,
+  sendMessageToClient,
   STAGE_TO_DB, COMPANY_STATUS_TO_DB, MISSION_STATUS_TO_DB,
 } from '../lib/api'
 
@@ -217,10 +218,14 @@ const CrmList=({S,onSel})=>{
 
 // ── CRM DETAIL ───────────────────────────────
 const CrmDetail=({company:co,S,onBack,onAddHist,onMsg,onToast})=>{
-  const [tab,setTab]=useState("Historique");
+  const [tab,setTab]=useState("Messages");
   const [showAdd,setShowAdd]=useState(false);
   const [hType,setHType]=useState("call");
   const [hText,setHText]=useState("");
+  const [msgText,setMsgText]=useState("");
+  const [msgs,setMsgs]=useState((co.history||[]).filter(h=>h.isFromClient||h.type==="message"));
+  const msgEndRef=useRef(null);
+  const unread=msgs.filter(m=>m.isFromClient).length;
   const [portalEmail,setPortalEmail]=useState(co.contacts?.[0]?.email||"");
   const [portalCreating,setPortalCreating]=useState(false);
   const [portalCreds,setPortalCreds]=useState(null);
@@ -310,9 +315,33 @@ const CrmDetail=({company:co,S,onBack,onAddHist,onMsg,onToast})=>{
       </div>
 
       <div style={{borderTop:`1px solid ${C.border}`,paddingTop:16,marginTop:16}}>
-        <Tabs tabs={["Historique","Missions"]} active={tab} onChange={setTab}/>
+        <div style={{display:"flex",gap:4}}>
+          {["Messages","Historique","Missions"].map(t=><button key={t} onClick={()=>setTab(t)} style={{padding:"6px 14px",borderRadius:8,border:"none",background:tab===t?C.acc+"18":"transparent",color:tab===t?C.acc:C.t3,fontWeight:tab===t?700:400,fontSize:12,cursor:"pointer",display:"flex",alignItems:"center",gap:5}}>
+            {t}{t==="Messages"&&unread>0&&<span style={{background:C.hot,color:C.wh,fontSize:9,fontWeight:700,borderRadius:10,padding:"1px 6px"}}>{unread}</span>}
+          </button>)}
+        </div>
       </div>
     </Bx>
+
+    {tab==="Messages"&&<Bx style={{padding:20,display:"flex",flexDirection:"column",minHeight:300}}>
+      <div style={{flex:1,display:"flex",flexDirection:"column",gap:8,marginBottom:12,maxHeight:360,overflowY:"auto"}}>
+        {msgs.length===0&&<div style={{textAlign:"center",color:C.t3,fontSize:12,padding:32}}>Aucun message — le client peut vous écrire depuis son portail</div>}
+        {msgs.map((m,i)=>{const isMe=!m.isFromClient;return<div key={i} style={{display:"flex",justifyContent:isMe?"flex-end":"flex-start"}}>
+          <div style={{maxWidth:"78%",background:isMe?C.acc+"12":C.card2,borderRadius:12,borderBottomRightRadius:isMe?3:12,borderBottomLeftRadius:isMe?12:3,padding:"10px 14px"}}>
+            {m.context&&<div style={{fontSize:9,color:C.acc,fontWeight:600,marginBottom:2}}>📌 {m.context}</div>}
+            <div style={{fontSize:10,color:C.t3,marginBottom:3}}>{isMe?"Same Job":co.name} · {m.date}</div>
+            <div style={{fontSize:13,color:C.t1,lineHeight:1.6}}>{m.text}</div>
+          </div>
+        </div>;})}
+        <div ref={msgEndRef}/>
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        <input value={msgText} onChange={e=>setMsgText(e.target.value)} placeholder={`Répondre à ${co.name}...`}
+          onKeyDown={async e=>{if(e.key==="Enter"&&msgText.trim()){const t=msgText;setMsgText("");setMsgs(p=>[...p,{text:t,isFromClient:false,date:new Date().toISOString().slice(0,10),by:"Vous",context:null}]);await sendMessageToClient(co.id,t).catch(console.error);onToast&&onToast("Message envoyé");msgEndRef.current?.scrollIntoView();}}}
+          style={{flex:1,background:C.card2,border:`1px solid ${C.border}`,borderRadius:10,padding:"9px 13px",color:C.t1,fontSize:13,outline:"none",fontFamily:"inherit"}}/>
+        <Btn pr sm dis={!msgText.trim()} onClick={async()=>{const t=msgText;setMsgText("");setMsgs(p=>[...p,{text:t,isFromClient:false,date:new Date().toISOString().slice(0,10),by:"Vous",context:null}]);await sendMessageToClient(co.id,t).catch(console.error);onToast&&onToast("Message envoyé");}}><Ic n="send" s={14} c={C.wh}/></Btn>
+      </div>
+    </Bx>}
 
     {tab==="Historique"&&<Bx style={{padding:20}}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
@@ -324,7 +353,7 @@ const CrmDetail=({company:co,S,onBack,onAddHist,onMsg,onToast})=>{
         <Inp label="Description" value={hText} onChange={e=>setHText(e.target.value)} placeholder="Décrivez l'interaction..." style={{flex:1,minWidth:200}}/>
         <Btn pr sm onClick={addH} dis={!hText.trim()}>Ajouter</Btn>
       </div>}
-      {(co.history||[]).map((h,i)=><div key={i} style={{display:"flex",gap:12,alignItems:"flex-start",marginBottom:14,paddingBottom:14,borderBottom:i<co.history.length-1?`1px solid ${C.border}`:"none"}}>
+      {(co.history||[]).filter(h=>!h.isFromClient&&h.type!=="message").map((h,i,arr)=><div key={i} style={{display:"flex",gap:12,alignItems:"flex-start",marginBottom:14,paddingBottom:14,borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none"}}>
         <div style={{width:32,height:32,borderRadius:8,background:(TC[h.type]||C.t3)+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Ic n={TI[h.type]||"file"} s={14} c={TC[h.type]||C.t3}/></div>
         <div style={{flex:1}}><div style={{fontSize:12,color:C.t1,lineHeight:1.5}}>{h.text}</div><div style={{fontSize:10,color:C.t3,marginTop:2}}>{h.date} · {h.by}</div></div>
       </div>)}

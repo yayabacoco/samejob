@@ -57,7 +57,7 @@ export async function getMissionsWithProfiles(companyId) {
     description: m.description || '',
     skills: m.skills || [],
     profiles: (candMissions || [])
-      .filter(cm => cm.mission_id === m.id)
+      .filter(cm => cm.mission_id === m.id && cm.candidates?.cv_text)
       .map(cm => ({
         cmId: cm.id,
         id: cm.candidate_id,
@@ -88,9 +88,8 @@ export async function getMissionsWithProfiles(companyId) {
 }
 
 function anonymize(name) {
-  if (!name) return 'Candidat'
-  const parts = name.trim().split(' ')
-  return `Candidat ${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`
+  if (!name) return '—'
+  return name.trim().split(/\s+/).map(w => w[0]?.toUpperCase() || '').filter(Boolean).join('.') + '.'
 }
 
 function buildSubtitle(c) {
