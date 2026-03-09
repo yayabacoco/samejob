@@ -5,6 +5,7 @@ import {
   updateCandidateStage, updateCandidateScores,
   addCandidateInteraction, addCompanyInteraction,
   createCandidate, createCompany, createMission,
+  assignMissionToCandidate, unassignMissionFromCandidate,
   STAGE_TO_DB, COMPANY_STATUS_TO_DB, MISSION_STATUS_TO_DB,
 } from '../lib/api'
 
@@ -301,7 +302,7 @@ const PipelineList=({S,onSel,onStage})=>{
 };
 
 // ── CANDIDATE DETAIL ─────────────────────────
-const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,toast})=>{
+const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,onAssign,toast})=>{
   const [tab,setTab]=useState("Historique");
   const [showAdd,setShowAdd]=useState(false);
   const [hType,setHType]=useState("call");
@@ -390,14 +391,28 @@ const CandDetail=({cand:c,S,onBack,onUpdate,onAddHist,toast})=>{
     </Bx>}
 
     {tab==="Matching"&&<div>
-      {matching.length===0&&<Bx style={{padding:28,textAlign:"center",color:C.t3,fontSize:12}}>Aucune mission compatible</Bx>}
-      {matching.map(m=>{const common=m.skills?.filter(s=>c.skills.includes(s))||[];const pct=m.skills?.length?Math.round(common.length/m.skills.length*100):0;return <Bx key={m.id} style={{padding:"14px 18px",marginBottom:8}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-          <div><div style={{fontSize:14,fontWeight:600,color:C.t1}}>{m.title}</div><div style={{fontSize:11,color:C.t2}}>{m.company} · {m.salary}</div></div>
-          <div style={{fontSize:22,fontWeight:800,color:pct>=70?C.ok:pct>=40?C.warn:C.err}}>{pct}%</div>
-        </div>
-        <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{m.skills?.map(s=><Badge key={s} c={c.skills.includes(s)?C.ok:C.t3}>{s}</Badge>)}</div>
-      </Bx>;})}
+      {S.missions.filter(m=>m.status!=="Placé").length===0&&<Bx style={{padding:28,textAlign:"center",color:C.t3,fontSize:12}}>Aucune mission active</Bx>}
+      {S.missions.filter(m=>m.status!=="Placé").map(m=>{
+        const assigned=c.missions.includes(m.title);
+        const common=m.skills?.filter(s=>c.skills.includes(s))||[];
+        const pct=m.skills?.length?Math.round(common.length/m.skills.length*100):0;
+        return <Bx key={m.id} style={{padding:"14px 18px",marginBottom:8,borderColor:assigned?C.ok+"55":C.border}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,gap:8,flexWrap:"wrap"}}>
+            <div style={{flex:1}}>
+              <div style={{fontSize:14,fontWeight:600,color:C.t1}}>{m.title}</div>
+              <div style={{fontSize:11,color:C.t2}}>{m.company} · {m.salary}</div>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{fontSize:20,fontWeight:800,color:pct>=70?C.ok:pct>=40?C.warn:C.err}}>{pct}%</div>
+              {assigned
+                ? <Btn sm onClick={()=>onAssign(c.id,m.id,m.title,false)} style={{background:C.err+"15",color:C.err,border:`1px solid ${C.err}33`}}><Ic n="x" s={11} c={C.err}/> Retirer</Btn>
+                : <Btn sm pr onClick={()=>onAssign(c.id,m.id,m.title,true)}><Ic n="plus" s={11} c={C.wh}/> Assigner</Btn>
+              }
+            </div>
+          </div>
+          <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{m.skills?.map(s=><Badge key={s} c={c.skills.includes(s)?C.ok:C.t3}>{s}</Badge>)}</div>
+        </Bx>;
+      })}
     </div>}
   </div>;
 };
@@ -803,6 +818,21 @@ export default function Dashboard({ session }) {
     showToast("Interaction ajoutée");
   };
 
+  const assignCandMission=async(candidateId,missionId,missionTitle,assign)=>{
+    setCandidates(p=>p.map(c=>{
+      if(c.id!==candidateId) return c;
+      const missions=assign?[...c.missions,missionTitle]:c.missions.filter(t=>t!==missionTitle);
+      return {...c,missions};
+    }));
+    try {
+      if(assign) await assignMissionToCandidate(candidateId,missionId);
+      else await unassignMissionFromCandidate(candidateId,missionId);
+      showToast(assign?"Mission assignée":"Mission retirée");
+    } catch(e) {
+      showToast("Erreur lors de l'assignation","err");
+    }
+  };
+
   const addCompHist=async(id,h)=>{
     setCompanies(p=>p.map(c=>c.id===id?{...c,history:[h,...(c.history||[])]}:c));
     addCompanyInteraction(id,h).catch(console.error);
@@ -839,7 +869,7 @@ export default function Dashboard({ session }) {
 
   // ── RENDER ────────────────────────────────
   const render=()=>{
-    if(page==="pipeline"&&selCand){const c=candidates.find(x=>x.id===selCand);if(c)return <CandDetail cand={c} S={S} onBack={()=>setSelCand(null)} onUpdate={updateCand} onAddHist={addCandHist} toast={showToast}/>;}
+    if(page==="pipeline"&&selCand){const c=candidates.find(x=>x.id===selCand);if(c)return <CandDetail cand={c} S={S} onBack={()=>setSelCand(null)} onUpdate={updateCand} onAddHist={addCandHist} onAssign={assignCandMission} toast={showToast}/>;}
     if(page==="crm"&&selComp){const c=companies.find(x=>x.id===selComp);if(c)return <CrmDetail company={c} S={S} onBack={()=>setSelComp(null)} onAddHist={addCompHist} onMsg={(tp,ctx)=>setMsgModal({type:tp,ctx})}/>;}
     if(page==="missions"&&selMis){const m=missions.find(x=>x.id===selMis);if(m)return <MissionDetail mission={m} S={S} onBack={()=>setSelMis(null)} onUpdateCand={updateCand}/>;}
     switch(page){

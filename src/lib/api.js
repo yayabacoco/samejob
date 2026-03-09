@@ -317,6 +317,22 @@ export async function createCompany(data) {
   return comp
 }
 
+export async function assignMissionToCandidate(candidateId, missionId) {
+  const { error } = await supabase
+    .from('candidate_missions')
+    .insert({ candidate_id: candidateId, mission_id: missionId })
+  if (error) throw error
+}
+
+export async function unassignMissionFromCandidate(candidateId, missionId) {
+  const { error } = await supabase
+    .from('candidate_missions')
+    .delete()
+    .eq('candidate_id', candidateId)
+    .eq('mission_id', missionId)
+  if (error) throw error
+}
+
 export async function createMission(data, companyId) {
   const { data: { user } } = await supabase.auth.getUser()
   const { data: mission, error } = await supabase
