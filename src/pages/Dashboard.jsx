@@ -817,7 +817,7 @@ const AddCandModal=({open,onClose,onAdd,missions})=>{
     if(!f.name||!f.email) return;
     const ini=f.name.split(" ").map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
     const mis=missions.find(m=>m.id===f.mission||m.title===f.mission);
-    onAdd({id:gid(),name:f.name,email:f.email,phone:f.phone,role:f.role,skills:f.skills.split(",").map(s=>s.trim()).filter(Boolean),scores:f.scores,missions:mis?[mis.title]:[],company:mis?mis.company:"",avatar:ini,available:true,salary:f.salary,consultant:f.consultant,stage:"Sourcing",history:[{date:today(),type:"source",text:"Ajouté à la plateforme"}],docs:[]});
+    onAdd({id:gid(),name:f.name,email:f.email,phone:f.phone,role:f.role,skills:f.skills.split(",").map(s=>s.trim()).filter(Boolean),scores:f.scores,missions:mis?[mis.title]:[],missionId:mis?mis.id:null,company:mis?mis.company:"",avatar:ini,available:true,salary:f.salary,consultant:f.consultant,stage:"Sourcing",history:[{date:today(),type:"source",text:"Ajouté à la plateforme"}],docs:[]});
     reset();onClose();
   };
   return <Modal open={open} onClose={()=>{reset();onClose();}} title="Ajouter un candidat" wide>
@@ -1180,9 +1180,17 @@ export default function Dashboard({ session }) {
   };
 
   const addCandidate=async(c)=>{
-    setCandidates(p=>[c,...p]);
-    createCandidate(c).catch(console.error);
-    showToast("Candidat ajouté");
+    try{
+      const saved=await createCandidate(c);
+      const ini=c.name.split(" ").map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
+      setCandidates(p=>[{...c,id:saved.id,avatar:ini},  ...p]);
+      if(c.missionId){
+        await assignMissionToCandidate(saved.id,c.missionId).catch(console.error);
+      }
+      showToast("Candidat ajouté");
+    }catch(e){
+      showToast("Erreur : "+e.message,"err");
+    }
   };
 
   const addCompany=async(c)=>{
