@@ -1,10 +1,4 @@
 import { supabase } from './supabase'
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseAdmin = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_SERVICE_KEY
-)
 
 // ── MAPPINGS ─────────────────────────────────
 
@@ -457,31 +451,23 @@ export async function signUpCabinet({ cabinetName, fullName, email, password }) 
   const userId = data.user?.id
   if (!userId) throw new Error('Erreur création compte')
 
-  // 2. Créer l'organisation
+  // 2. Créer org + user via fonction SECURITY DEFINER (bypass RLS, pas de secret key)
   const slug = cabinetName.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
     + '-' + Date.now().toString(36)
 
-  const { data: org, error: orgError } = await supabaseAdmin
-    .from('organizations')
-    .insert({ name: cabinetName, slug })
-    .select().single()
-  if (orgError) throw orgError
-
-  // 3. Créer le profil utilisateur
   const initials = (fullName || '??').split(' ').map(w => w[0] || '').join('').slice(0, 2).toUpperCase()
-  const { error: userError } = await supabaseAdmin
-    .from('users')
-    .insert({
-      id: userId,
-      organization_id: org.id,
-      email,
-      full_name: fullName,
-      role: 'consultant',
-      avatar_initials: initials,
-    })
-  if (userError) throw userError
+
+  const { error: rpcError } = await supabase.rpc('create_cabinet', {
+    p_user_id: userId,
+    p_cabinet_name: cabinetName,
+    p_full_name: fullName,
+    p_email: email,
+    p_slug: slug,
+    p_initials: initials,
+  })
+  if (rpcError) throw rpcError
 }
 
 export async function createMission(data, companyId) {
