@@ -1,4 +1,10 @@
 import { supabase } from './supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseAdmin = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_SERVICE_KEY
+)
 
 // ── MAPPINGS ─────────────────────────────────
 
@@ -457,7 +463,7 @@ export async function signUpCabinet({ cabinetName, fullName, email, password }) 
     .replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
     + '-' + Date.now().toString(36)
 
-  const { data: org, error: orgError } = await supabase
+  const { data: org, error: orgError } = await supabaseAdmin
     .from('organizations')
     .insert({ name: cabinetName, slug })
     .select().single()
@@ -465,7 +471,7 @@ export async function signUpCabinet({ cabinetName, fullName, email, password }) 
 
   // 3. Créer le profil utilisateur
   const initials = (fullName || '??').split(' ').map(w => w[0] || '').join('').slice(0, 2).toUpperCase()
-  const { error: userError } = await supabase
+  const { error: userError } = await supabaseAdmin
     .from('users')
     .insert({
       id: userId,
