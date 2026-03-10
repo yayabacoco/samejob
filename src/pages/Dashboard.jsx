@@ -931,7 +931,7 @@ const AddMisModal=({open,onClose,onAdd,companies})=>{
   const parse=async()=>{
     if(!jt.trim())return;setParsing(true);
     try{
-      const prompt=`Analyse cette fiche de poste. Réponds UNIQUEMENT en JSON valide sans backticks: {"title":"","company":"","salary":"XXK€","fee":"18%","location":"","contract":"CDI/CDD/Freelance","experience":"","skills":[""],"description":"","requirements":[""],"remote":""}\n\nFiche:\n${jt}`;
+      const prompt=`Analyse cette fiche de poste et extrais les champs demandés. Réponds UNIQUEMENT en JSON valide sans backticks ni markdown.\n\nRÈGLES :\n- Extrais les champs structurés depuis le texte\n- Pour "description" : copie INTÉGRALEMENT le texte original de la fiche de poste, sans rien supprimer ni résumer\n- Pour "requirements" : liste les prérequis s'ils sont distincts du corps du texte, sinon tableau vide\n\nJSON attendu : {"title":"","company":"","salary":"XXK€","fee":"18%","location":"","contract":"CDI/CDD/Freelance","experience":"","skills":[""],"description":"[TEXTE INTÉGRAL ICI]","requirements":[""],"remote":""}\n\nFiche de poste :\n${jt}`;
       const res=await fetch("https://gbgbtbzrcsqmyckrcehe.supabase.co/functions/v1/ai-chat",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt})});
       const data=await res.json();const raw=(data.result||"");
       const r=JSON.parse(raw.replace(/```json|```/g,"").trim());
