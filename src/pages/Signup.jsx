@@ -45,13 +45,16 @@ export default function Signup() {
     return (
       <div style={s.page}>
         <div style={s.card}>
-          <span style={s.icon}>✅</span>
-          <h2 style={{ color: '#f1f0ff', margin: '1rem 0 0.5rem' }}>Cabinet créé !</h2>
-          <p style={{ color: '#a09cc0', fontSize: 14, marginBottom: '1.5rem' }}>
-            Votre espace <strong style={{ color: '#a855f7' }}>{form.cabinetName}</strong> est prêt.
+          <span style={s.icon}>📧</span>
+          <h2 style={{ color: '#f1f0ff', margin: '1rem 0 0.5rem' }}>Vérifiez votre email</h2>
+          <p style={{ color: '#a09cc0', fontSize: 14, lineHeight: 1.7, marginBottom: '0.75rem' }}>
+            Un email de confirmation a été envoyé à <strong style={{ color: '#f1f0ff' }}>{form.email}</strong>.
           </p>
-          <button onClick={() => navigate('/login')} style={s.btn}>
-            Se connecter →
+          <p style={{ color: '#a09cc0', fontSize: 14, lineHeight: 1.7, marginBottom: '1.5rem' }}>
+            Cliquez sur le lien dans l'email pour activer votre compte, puis connectez-vous.
+          </p>
+          <button onClick={() => navigate('/login')} style={{ ...s.btn, background: '#2e2b5a', color: '#a09cc0' }}>
+            Aller à la connexion →
           </button>
         </div>
       </div>
