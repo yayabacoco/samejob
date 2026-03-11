@@ -208,7 +208,7 @@ export async function getReminders() {
     .from('reminders')
     .select('*')
     .eq('done', false)
-    .order('due_date', { ascending: true })
+    .order('date', { ascending: true })
     .limit(10)
 
   if (error) return []
@@ -297,8 +297,20 @@ export async function getCompanyMessages(companyId) {
 
 // ── CREATE MUTATIONS ─────────────────────────
 
-export async function createCandidate(data) {
+async function getOrgId() {
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Non connecté')
+  const { data } = await supabase
+    .from('users')
+    .select('organization_id')
+    .eq('id', user.id)
+    .single()
+  if (!data?.organization_id) throw new Error('Compte non reconnu — contactez votre administrateur')
+  return { userId: user.id, orgId: data.organization_id }
+}
+
+export async function createCandidate(data) {
+  const { userId, orgId } = await getOrgId()
   const { data: cand, error } = await supabase
     .from('candidates')
     .insert({
@@ -314,7 +326,8 @@ export async function createCandidate(data) {
       score_fit: data.scores[3],
       score_dispo: data.scores[4],
       stage: 'sourcing',
-      consultant_id: user?.id,
+      consultant_id: userId,
+      organization_id: orgId,
       availability: 'disponible',
     })
     .select()
@@ -324,7 +337,7 @@ export async function createCandidate(data) {
 }
 
 export async function createCompany(data) {
-  const { data: { user } } = await supabase.auth.getUser()
+  const { orgId } = await getOrgId()
   const { data: comp, error } = await supabase
     .from('companies')
     .insert({
@@ -332,6 +345,7 @@ export async function createCompany(data) {
       sector: data.sector,
       status: COMPANY_STATUS_TO_DB[data.status] || 'prospect',
       notes: data.notes,
+      organization_id: orgId,
     })
     .select()
     .single()
@@ -351,45 +365,39 @@ export async function createCompany(data) {
 
 // ── CLIENT PORTAL ACCESS ─────────────────────
 
-const SERVICE_KEY = import.meta.env.VITE_SUPABASE_SERVICE_KEY
 const SUPABASE_URL_BASE = 'https://gbgbtbzrcsqmyckrcehe.supabase.co'
 
-async function inviteUser(email, redirectTo) {
-  const res = await fetch(`${SUPABASE_URL_BASE}/auth/v1/admin/invite`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${SERVICE_KEY}`,
-      'apikey': SERVICE_KEY,
-    },
-    body: JSON.stringify({ email, redirect_to: redirectTo }),
-  })
-  const data = await res.json()
-  if (!res.ok) throw new Error(data.msg || data.message || 'Erreur invitation')
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdiZ2J0YnpyY3NxbXlja3JjZWhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5OTkxNzEsImV4cCI6MjA4ODU3NTE3MX0.RNcfqqFCndPp100NLsr_nZCTJlRmkfQmxmMLPAxoA4Q'
+
+async function inviteUser(email, redirectTo, extraFields = {}) {
+  let res
+  try {
+    res = await fetch(`${SUPABASE_URL_BASE}/functions/v1/invite-user`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+      body: JSON.stringify({ email, redirect_to: redirectTo, ...extraFields }),
+    })
+  } catch {
+    throw new Error('Impossible de contacter le serveur')
+  }
+  let data
+  try {
+    data = await res.json()
+  } catch {
+    throw new Error('Réponse invalide du serveur')
+  }
+  if (data?.error) throw new Error(data.error)
+  if (!data?.id) throw new Error('Invitation échouée — réponse inattendue')
   return data
 }
 
 export async function createClientAccess(companyId, email) {
-  const data = await inviteUser(email, 'https://samejob-client.vercel.app')
-
-  const { error } = await supabase
-    .from('companies')
-    .update({ portal_user_id: data.id })
-    .eq('id', companyId)
-  if (error) throw error
-
+  const data = await inviteUser(email, 'https://client-portal-gamma-two.vercel.app', { company_id: companyId })
   return { email, userId: data.id }
 }
 
 export async function createCandidateAccess(candidateId, email) {
-  const data = await inviteUser(email, 'https://samejob-candidate.vercel.app')
-
-  const { error } = await supabase
-    .from('candidates')
-    .update({ candidate_portal_user_id: data.id })
-    .eq('id', candidateId)
-  if (error) throw error
-
+  const data = await inviteUser(email, 'https://candidate-portal-navy.vercel.app', { candidate_id: candidateId })
   return { email, userId: data.id }
 }
 
